@@ -45,9 +45,9 @@ For utils :
 Compilation
 -----------
 
-User _make_ 
+Use _make_ command
 
-    _make_ [CROSS=XXX] [DEBUG=1]
+    make [CROSS=XXX] [DEBUG=1]
 
 CROSS can define a cross compiler prefix (ie arm-linux-gnueabihf-)
 
