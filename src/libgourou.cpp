@@ -35,7 +35,8 @@
 namespace gourou
 {
     GOUROU_LOG_LEVEL logLevel = WARN;
-
+    const std::string DRMProcessor::VERSION = LIBGOUROU_VERSION;
+    
     DRMProcessor::DRMProcessor(DRMProcessorClient* client):client(client), device(0), user(0)
     {
 	if (!client)

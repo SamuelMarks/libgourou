@@ -127,6 +127,11 @@ static const char* findFile(const char* filename, bool inDefaultDirs=true)
     return 0;
 }
 
+static void version(void)
+{
+    std::cout << "Current libgourou version : " << gourou::DRMProcessor::VERSION << std::endl ;
+}
+
 static void usage(const char* cmd)
 {
     std::cout << "Download EPUB file from ACSM request file" << std::endl;
@@ -140,6 +145,7 @@ static void usage(const char* cmd)
     std::cout << "  " << "-o|--output-file"     << "\t"   << "Optional output epub filename (default <title.epub>)" << std::endl;
     std::cout << "  " << "-f|--acsm-file"       << "\t"   << "ACSM request file for epub download" << std::endl;
     std::cout << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
+    std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
     std::cout << "  " << "-h|--help"            << "\t\t" << "This help" << std::endl;
 
     std::cout << std::endl;
@@ -167,11 +173,12 @@ int main(int argc, char** argv)
 	    {"output-file",      required_argument, 0,  'o' },
 	    {"acsm-file",        required_argument, 0,  'f' },
 	    {"verbose",          no_argument,       0,  'v' },
+	    {"version",          no_argument,       0,  'V' },
 	    {"help",             no_argument,       0,  'h' },
 	    {0,                  0,                 0,  0 }
 	};
 
-	c = getopt_long(argc, argv, "d:a:k:O:o:f:vh",
+	c = getopt_long(argc, argv, "d:a:k:O:o:f:vVh",
                         long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -198,10 +205,12 @@ int main(int argc, char** argv)
 	case 'v':
 	    verbose++;
 	    break;
+	case 'V':
+	    version();
+	    return 0;
 	case 'h':
 	    usage(argv[0]);
 	    return 0;
-	    break;
 	default:
 	    usage(argv[0]);
 	    return -1;

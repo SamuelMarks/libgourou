@@ -134,6 +134,11 @@ private:
     QCoreApplication* app;
 };	      
 
+static void version(void)
+{
+    std::cout << "Current libgourou version : " << gourou::DRMProcessor::VERSION << std::endl ;
+}
+
 static void usage(const char* cmd)
 {
     std::cout << "Create new device files used by ADEPT DRM" << std::endl;
@@ -146,6 +151,7 @@ static void usage(const char* cmd)
     std::cout << "  " << "-H|--hobbes-version" << "\t"<< "Force RMSDK version to a specific value (default: version of current librmsdk)" << std::endl;
     std::cout << "  " << "-r|--random-serial" << "\t"<< "Generate a random device serial (if not set, it will be dependent of your current configuration)" << std::endl;
     std::cout << "  " << "-v|--verbose"    << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
+    std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
     std::cout << "  " << "-h|--help"       << "\t\t" << "This help" << std::endl;
 
     std::cout << std::endl;
@@ -177,11 +183,12 @@ int main(int argc, char** argv)
 	    {"hobbes-version",required_argument, 0,  'H' },
 	    {"random-serial", no_argument,       0,  'r' },
 	    {"verbose",       no_argument,       0,  'v' },
+	    {"version",          no_argument,       0,  'V' },
 	    {"help",          no_argument,       0,  'h' },
 	    {0,               0,                 0,  0 }
 	};
 
-	c = getopt_long(argc, argv, "u:p:O:H:rvh",
+	c = getopt_long(argc, argv, "u:p:O:H:rvVh",
                         long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -202,10 +209,12 @@ int main(int argc, char** argv)
 	case 'v':
 	    verbose++;
 	    break;
+	case 'V':
+	    version();
+	    return 0;
 	case 'h':
 	    usage(argv[0]);
 	    return 0;
-	    break;
 	case 'r':
 	    randomSerial = true;
 	    break;

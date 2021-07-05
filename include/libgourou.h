@@ -40,6 +40,8 @@
 #define ACS_SERVER              "http://adeactivate.adobe.com/adept"
 #endif
 
+#define LIBGOUROU_VERSION       "0.1"
+
 namespace gourou
 {
     /**
@@ -48,6 +50,8 @@ namespace gourou
     class DRMProcessor
     {
     public:
+
+	static const std::string VERSION;
 
 	/**
 	 * @brief Main constructor. To be used once all is configured (user has signedIn, device is activated)
