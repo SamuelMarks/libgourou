@@ -47,11 +47,13 @@ Compilation
 
 Use _make_ command
 
-    make [CROSS=XXX] [DEBUG=1]
+    make [CROSS=XXX] [DEBUG=1] [STATIC_UTILS=1]
 
 CROSS can define a cross compiler prefix (ie arm-linux-gnueabihf-)
 
 DEBUG can be set to compile in DEBUG mode
+
+STATIC_UTILS to build utils with static library (libgourou.a) instead of default dynamic one (libgourou.so)
 
 
 Utils

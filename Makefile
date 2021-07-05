@@ -44,7 +44,7 @@ libgourou.so: libgourou.a
 	$(CXX) obj/*.o $(LDFLAGS) -o $@ -shared
 
 utils:
-	make -C utils ROOT=$(PWD) CXX=$(CXX) AR=$(AR) DEBUG=$(DEBUG)
+	make -C utils ROOT=$(PWD) CXX=$(CXX) AR=$(AR) DEBUG=$(DEBUG) STATIC_UTILS=$(STATIC_UTILS)
 
 clean:
 	rm -rf libgourou.a libgourou.so obj
