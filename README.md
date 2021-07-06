@@ -62,7 +62,7 @@ Utils
 You can import configuration from your eReader or create a new one with utils/activate :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
-    ./utils/activate -u <USERNAME>
+    ./utils/activate -u <AdobeID USERNAME>
 
 Then a _./.adept_ directory is created with all configuration file
 
