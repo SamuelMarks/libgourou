@@ -244,8 +244,8 @@ void* DRMProcessorClientImpl::AESEncryptInit(CHAINING_MODE chaining,
 	    break;
 	default:
 	    EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
-	break;
 	}
+	break;
     default:
 	EVP_CIPHER_CTX_free(ctx);
 	EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
