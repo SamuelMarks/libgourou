@@ -373,7 +373,11 @@ namespace gourou
 	decl.append_attribute("version") = "1.0";
 	pugi::xml_node signIn = signInRequest.append_child("adept:signIn");
 	signIn.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
-	signIn.append_attribute("method") = user->getLoginMethod().c_str();
+	std::string loginMethod = user->getLoginMethod();
+	if (loginMethod.size())
+	    signIn.append_attribute("method") = loginMethod.c_str();
+	else
+	    signIn.append_attribute("method") = "AdobeID";
 
 	unsigned char encryptedSignInData[RSA_KEY_SIZE];
 	const unsigned char* deviceKey = device->getDeviceKey();
