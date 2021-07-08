@@ -82,7 +82,9 @@ public:
 		else
 		    filename += ".epub";
 	    }
-
+	    else
+		filename = outputFile;
+	    
 	    if (outputDir)
 	    {
 		QDir dir(outputDir);
