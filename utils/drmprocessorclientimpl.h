@@ -63,6 +63,9 @@ class DRMProcessorClientImpl : public gourou::DRMProcessorClient
     
     virtual void extractRSAPublicKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned int* keyOutLength);
     virtual void extractRSAPrivateKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned int* keyOutLength);
+    virtual void extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+				    const RSA_KEY_TYPE keyType, const std::string& password,
+				    unsigned char** certOut, unsigned int* certOutLength);
 				 
     /* Crypto interface */
     virtual void AESEncrypt(CHAINING_MODE chaining,

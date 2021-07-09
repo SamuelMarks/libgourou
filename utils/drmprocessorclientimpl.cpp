@@ -213,6 +213,25 @@ void DRMProcessorClientImpl::extractRSAPrivateKey(void* handler, unsigned char**
     EVP_PKEY_free(evpKey);
 }
 				 
+void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+						const RSA_KEY_TYPE keyType, const std::string& password,
+						unsigned char** certOut, unsigned int* certOutLength)
+{
+    PKCS12 * pkcs12;
+    EVP_PKEY* pkey = 0;
+    X509* cert = 0;
+    STACK_OF(X509)* ca;
+
+    pkcs12 = d2i_PKCS12(NULL, &RSAKey, RSAKeyLength);
+    if (!pkcs12)
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
+    PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, &ca);
+
+    *certOutLength = i2d_X509(cert, certOut);
+
+    EVP_PKEY_free(pkey);
+}
+
 /* Crypto interface */
 void DRMProcessorClientImpl::AESEncrypt(CHAINING_MODE chaining,
 					const unsigned char* key, unsigned int keyLength,

@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>
+#include <vector>
 
 #include <libgourou.h>
 #include <libgourou_common.h>
@@ -156,13 +157,28 @@ namespace gourou
 	    
 	    pushString(sha_ctx, name);
 
-	    // Must be parsed in reverse order
-	    for (pugi::xml_attribute attr = root.last_attribute();
-		 attr; attr = attr.previous_attribute())
+	    std::vector<std::string> attributes;
+	    pugi::xml_attribute attr;
+	    
+	    for (attr = root.first_attribute();
+		 attr; attr = attr.next_attribute())
 	    {
 		if (std::string(attr.name()).find("xmlns") != std::string::npos)
 		    continue;
-		    
+
+		attributes.push_back(attr.name());
+	    }
+
+	    // Attributes must be handled in alphabetical order
+	    std::sort(attributes.begin(), attributes.end());
+
+	    std::vector<std::string>::iterator attributesIt;
+	    for(attributesIt = attributes.begin();
+		attributesIt != attributes.end();
+		attributesIt++)
+	    {
+		attr = root.attribute(attributesIt->c_str());
+		
 		pushTag(sha_ctx, ASN_ATTRIBUTE);
 		pushString(sha_ctx, "");
 		
@@ -213,7 +229,72 @@ namespace gourou
 	    for(int i=0; i<(int)SHA1_LEN; i++)
 		printf("%02x ", sha_out[i]);
 	    printf("\n");
+
 	}
+    }
+
+    std::string DRMProcessor::signNode(const pugi::xml_node& rootNode)
+    {
+	// Compute hash
+	unsigned char sha_out[SHA1_LEN];
+
+	hashNode(rootNode, sha_out);
+	    
+	// Sign with private key
+	unsigned char res[RSA_KEY_SIZE];
+	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
+	std::string pkcs12 = user->getPKCS12();
+	ByteArray privateRSAKey = ByteArray::fromBase64(pkcs12);
+	
+	client->RSAPrivateEncrypt(privateRSAKey.data(), privateRSAKey.length(),
+				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
+				  sha_out, sizeof(sha_out), res);
+	if (logLevel >= DEBUG)
+	{
+	    printf("Sig : ");
+	    for(int i=0; i<(int)sizeof(res); i++)
+		printf("%02x ", res[i]);
+	    printf("\n");
+	}
+
+	ByteArray signature(res, sizeof(res));
+
+	return signature.toBase64();
+    }
+
+    void DRMProcessor::addNonce(pugi::xml_node& root)
+    {
+	/*
+	  r4 = tp->time
+	  r3 = 0
+	  r2 = tm->militime
+	  r0 = 0x6f046000
+	  r1 = 0x388a
+  
+	  r3 += high(r4*1000)
+	  r2 += low(r4*1000)
+  
+	  r0 += r2
+	  r1 += r3
+	 */
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	uint32_t nonce32[2] = {0x6f046000, 0x388a};
+	uint64_t bigtime = tv.tv_sec*1000;
+	nonce32[0] += (bigtime & 0xFFFFFFFF) + (tv.tv_usec/1000);
+	nonce32[1] += ((bigtime >> 32) & 0xFFFFFFFF);
+	
+	ByteArray nonce((const unsigned char*)&nonce32, sizeof(nonce32));
+	uint32_t tmp = 0;
+	nonce.append((const unsigned char*)&tmp, sizeof(tmp));
+	appendTextElem(root, "adept:nonce", nonce.toBase64().data());
+
+	time_t _time = time(0) + 10*60; // Cur time + 10 minutes
+	struct tm* tm_info = localtime(&_time);
+	char buffer[32];
+
+	strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+	appendTextElem(root, "adept:expiration", buffer);
     }
     
     ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType)
@@ -243,6 +324,102 @@ namespace gourou
 	return sendRequest(url, xmlStr, (const char*)"application/vnd.adobe.adept+xml");
     }
     
+    void DRMProcessor::buildAuthRequest(pugi::xml_document& authReq)
+    {
+	pugi::xml_node decl = authReq.append_child(pugi::node_declaration);
+	decl.append_attribute("version") = "1.0";
+	
+	pugi::xml_node root = authReq.append_child("adept:credentials");
+	root.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
+
+	appendTextElem(root, "adept:user",       user->getUUID());
+
+	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
+	unsigned char* pkcs12 = 0;
+	unsigned int pkcs12Length;
+	ByteArray pkcs12Cert = ByteArray::fromBase64(user->getPKCS12());
+	
+	client->extractCertificate(pkcs12Cert.data(), pkcs12Cert.length(),
+				   RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
+				   &pkcs12, &pkcs12Length);
+	ByteArray privateCertificate(pkcs12, pkcs12Length);
+	free(pkcs12);
+
+	appendTextElem(root, "adept:certificate",               privateCertificate.toBase64());
+	appendTextElem(root, "adept:licenseCertificate",        user->getProperty("//adept:licenseCertificate"));
+	appendTextElem(root, "adept:authenticationCertificate", user->getProperty("//adept:authenticationCertificate"));
+    }
+    
+    void DRMProcessor::buildInitLicenseServiceRequest(pugi::xml_document& initLicReq, std::string operatorURL)
+    {
+	pugi::xml_node decl = initLicReq.append_child(pugi::node_declaration);
+	decl.append_attribute("version") = "1.0";
+	
+	pugi::xml_node root = initLicReq.append_child("adept:licenseServiceRequest");
+	root.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
+	root.append_attribute("identity") = "user";
+
+	appendTextElem(root, "adept:operatorURL", operatorURL);
+	addNonce(root);
+	appendTextElem(root, "adept:user",        user->getUUID());
+
+	std::string signature = signNode(root);
+	appendTextElem(root, "adept:signature",   signature);
+    }
+    
+    void DRMProcessor::operatorAuth(std::string operatorURL)
+    {
+	pugi::xpath_node_set operatorList = user->getProperties("//adept:operatorURL");
+	
+	for (pugi::xpath_node_set::const_iterator operatorIt = operatorList.begin();
+	     operatorIt != operatorList.end(); ++operatorIt)
+	{
+	    std::string value = operatorIt->node().first_child().value();
+	    if (trim(value) == operatorURL)
+	    {
+		GOUROU_LOG(DEBUG, "Already authenticated to operator " << operatorURL);
+		return;
+	    }
+	}
+
+	pugi::xml_document authReq;
+	buildAuthRequest(authReq);
+	std::string authURL = operatorURL;
+	int fulfillPos = authURL.rfind("Fulfill");
+	if (fulfillPos == ((int)authURL.size() - 7))
+	    authURL = authURL.substr(0, fulfillPos-1);
+	ByteArray replyData = sendRequest(authReq, authURL + "/Auth");
+
+	pugi::xml_document initLicReq;
+	std::string activationURL = user->getProperty("//adept:activationURL");
+	buildInitLicenseServiceRequest(initLicReq, authURL);
+	sendRequest(initLicReq, activationURL + "/InitLicenseService");
+
+	// Add new operatorURL to list
+	pugi::xml_document activationDoc;
+	user->readActivation(activationDoc);
+
+	pugi::xml_node root;
+	pugi::xpath_node xpathRes = activationDoc.select_node("//adept:operatorURLList");
+
+	// Create adept:operatorURLList if it doesn't exists
+	if (!xpathRes)
+	{
+	    xpathRes = activationDoc.select_node("/activationInfo");
+	    root = xpathRes.node();
+	    root = root.append_child("adept:operatorURLList");
+	    root.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
+
+	    appendTextElem(root, "adept:user",       user->getUUID());
+	}
+	else
+	    root = xpathRes.node();
+
+	appendTextElem(root, "adept:operatorURL", operatorURL);
+
+	user->updateActivationFile(activationDoc);
+    }
+
     void DRMProcessor::buildFulfillRequest(pugi::xml_document& acsmDoc, pugi::xml_document& fulfillReq)
     {
 	pugi::xml_node decl = fulfillReq.append_child(pugi::node_declaration);
@@ -281,7 +458,7 @@ namespace gourou
 	    EXCEPTION(FF_INVALID_ACSM_FILE, "Invalid ACSM file " << ACSMFile);
 
 	GOUROU_LOG(INFO, "Fulfill " << ACSMFile);
-	
+
 	// Build req file
 	pugi::xml_document fulfillReq;
 
@@ -300,36 +477,12 @@ namespace gourou
 	
 	hmacParentNode.remove_child(hmacNode);
 
-	// Compute hash
-	unsigned char sha_out[SHA1_LEN];
-
-	hashNode(rootNode, sha_out);
-	    
-	// Sign with private key
-	unsigned char res[RSA_KEY_SIZE];
-	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
-	std::string pkcs12 = user->getPKCS12();
-	ByteArray privateRSAKey = ByteArray::fromBase64(pkcs12);
-	
-	client->RSAPrivateEncrypt(privateRSAKey.data(), privateRSAKey.length(),
-				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
-				  sha_out, sizeof(sha_out), res);
-	if (logLevel >= DEBUG)
-	{
-	    printf("Sig : ");
-	    for(int i=0; i<(int)sizeof(res); i++)
-		printf("%02x ", res[i]);
-	    printf("\n");
-	}
+	std::string signature = signNode(rootNode);
 	
 	// Add removed HMAC
 	appendTextElem(hmacParentNode, hmacNode.name(), hmacNode.first_child().value());
 	
-	// Add base64 encoded signature
-	ByteArray signature(res, sizeof(res));
-	std::string b64Signature = signature.toBase64();
-
-	appendTextElem(rootNode, "adept:signature", b64Signature);
+	appendTextElem(rootNode, "adept:signature", signature);
 
 	pugi::xpath_node node = acsmDoc.select_node("//operatorURL");
 	if (!node)
@@ -338,6 +491,8 @@ namespace gourou
 	std::string operatorURL = node.node().first_child().value();
 	operatorURL = trim(operatorURL) + "/Fulfill";
 
+	operatorAuth(operatorURL);
+	
 	ByteArray replyData = sendRequest(fulfillReq, operatorURL);
 
 	pugi::xml_document fulfillReply;
@@ -508,37 +663,7 @@ namespace gourou
 	appendTextElem(targetDevice, "adept:deviceType",      (*device)["deviceType"]);
 	appendTextElem(targetDevice, "adept:fingerprint",     (*device)["fingerprint"]);
 
-	/*
-	  r4 = tp->time
-	  r3 = 0
-	  r2 = tm->militime
-	  r0 = 0x6f046000
-	  r1 = 0x388a
-  
-	  r3 += high(r4*1000)
-	  r2 += low(r4*1000)
-  
-	  r0 += r2
-	  r1 += r3
-	 */
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	uint32_t nonce32[2] = {0x6f046000, 0x388a};
-	uint64_t bigtime = tv.tv_sec*1000;
-	nonce32[0] += (bigtime & 0xFFFFFFFF) + (tv.tv_usec/1000);
-	nonce32[1] += ((bigtime >> 32) & 0xFFFFFFFF);
-	
-	ByteArray nonce((const unsigned char*)&nonce32, sizeof(nonce32));
-	uint32_t tmp = 0;
-	nonce.append((const unsigned char*)&tmp, sizeof(tmp));
-	appendTextElem(root, "adept:nonce", nonce.toBase64().data());
-
-	time_t _time = time(0) + 10*60; // Cur time + 10 minutes
-	struct tm* tm_info = localtime(&_time);
-	char buffer[32];
-
-	strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
-	appendTextElem(root, "adept:expiration", buffer);
+	addNonce(root);
 	
 	appendTextElem(root, "adept:user", user->getUUID());
     }
@@ -550,29 +675,13 @@ namespace gourou
 	GOUROU_LOG(INFO, "Activate device");
 
 	buildActivateReq(activateReq);
-	
-	// Compute hash
-	unsigned char sha_out[SHA1_LEN];
 
 	pugi::xml_node root = activateReq.select_node("adept:activate").node();
-	hashNode(root, sha_out);
 
-	// Sign with private key
-	ByteArray RSAKey = ByteArray::fromBase64(user->getPKCS12());
-	unsigned char res[RSA_KEY_SIZE];
-	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
-	
-	client->RSAPrivateEncrypt(RSAKey.data(), RSAKey.length(), RSAInterface::RSA_KEY_PKCS12,
-				  deviceKey.toBase64().c_str(),
-				  sha_out, sizeof(sha_out),
-				  res);
-
-	// Add base64 encoded signature
-	ByteArray signature(res, sizeof(res));
-	std::string b64Signature = signature.toBase64();
+	std::string signature = signNode(root);
 
 	root = activateReq.select_node("adept:activate").node();
-	appendTextElem(root, "adept:signature", b64Signature);
+	appendTextElem(root, "adept:signature", signature);
 
 	pugi::xml_document activationDoc;
 	user->readActivation(activationDoc);

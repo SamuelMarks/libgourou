@@ -173,6 +173,20 @@ namespace gourou
 	 * @param keyOutLength   Length of result
 	 */
 	virtual void extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength) = 0;
+
+	/**
+	 * @brief Extract certificate from PKCS12 blob
+	 *
+	 * @param RSAKey         RSA key in binary form
+	 * @param RSAKeyLength   RSA key length
+	 * @param keyType        Key type
+	 * @param password       Optional password for RSA PKCS12 certificate
+	 * @param certOut        Result certificate
+	 * @param certOutLength  Result certificate length
+	 */
+	virtual void extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+					const RSA_KEY_TYPE keyType, const std::string& password,
+					unsigned char** certOut, unsigned int* certOutLength) = 0;
     };
 
     class CryptoInterface

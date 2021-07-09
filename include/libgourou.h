@@ -40,7 +40,7 @@
 #define ACS_SERVER              "http://adeactivate.adobe.com/adept"
 #endif
 
-#define LIBGOUROU_VERSION       "0.1.1"
+#define LIBGOUROU_VERSION       "0.2"
 
 namespace gourou
 {
@@ -184,6 +184,11 @@ namespace gourou
 	void pushTag(void* sha_ctx, uint8_t tag);
 	void hashNode(const pugi::xml_node& root, void *sha_ctx, std::map<std::string,std::string> nsHash);
 	void hashNode(const pugi::xml_node& root, unsigned char* sha_out);
+	std::string signNode(const pugi::xml_node& rootNode);
+	void addNonce(pugi::xml_node& root);
+	void buildAuthRequest(pugi::xml_document& authReq);
+	void buildInitLicenseServiceRequest(pugi::xml_document& initLicReq, std::string operatorURL);
+	void operatorAuth(std::string operatorURL);
 	void buildFulfillRequest(pugi::xml_document& acsmDoc, pugi::xml_document& fulfillReq);
 	void buildActivateReq(pugi::xml_document& activateReq);
 	ByteArray sendFulfillRequest(const pugi::xml_document& document, const std::string& url);

@@ -71,6 +71,11 @@ namespace gourou
 	std::string getProperty(const std::string property);
 	
 	/**
+	 * @brief Get all nodes with property name
+	 */
+	pugi::xpath_node_set getProperties(const std::string property);
+	
+	/**
 	 * @brief Create activation.xml and devicesalt files if they did not exists
 	 *
 	 * @param processor      Instance of DRMProcessor

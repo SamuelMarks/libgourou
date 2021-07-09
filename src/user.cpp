@@ -110,6 +110,11 @@ namespace gourou {
 	return trim(res);
     }
     
+    pugi::xpath_node_set User::getProperties(const std::string property)
+    {
+	return activationDoc.select_nodes(property.c_str());
+    }
+
     User* User::createUser(DRMProcessor* processor, const std::string& dirName, const std::string& ACSServer)
     {
 	struct stat _stat;
