@@ -111,6 +111,24 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     while (!reply->isFinished())
 	app->processEvents();
 
+    QByteArray location = reply->rawHeader("Location");
+    if (location.size() != 0)
+    {
+	GOUROU_LOG(gourou::DEBUG, "New location");
+	return sendHTTPRequest(location.constData(), POSTData, contentType);
+    }
+
+    if (reply->error() != QNetworkReply::NoError)
+	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << reply->error());
+
+    if (gourou::logLevel >= gourou::DEBUG)
+    {
+	QList<QByteArray> headers = reply->rawHeaderList();
+	for (int i = 0; i < headers.size(); ++i) {
+	    std::cout << headers[i].constData() << " : "  << reply->rawHeader(headers[i]).constData() << std::endl;
+	}
+    }
+    
     replyData = reply->readAll();
     if (reply->rawHeader("Content-Type") == "application/vnd.adobe.adept+xml")
     {
