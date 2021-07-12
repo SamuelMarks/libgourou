@@ -58,3 +58,11 @@ License
 libgourou : LGPL v3 or later
 
 utils     : BSD
+
+
+
+Special thanks
+--------------
+
+  * _Jens_ for all test samples and utils testing
+  
