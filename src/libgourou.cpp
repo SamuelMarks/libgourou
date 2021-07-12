@@ -132,7 +132,8 @@ namespace gourou
 			ns = attrName.substr(attrName.find(':')+1);
 
 		    nsHash[ns] = ait->value();
-		    break;
+		    // Don't break here because we may multiple xmlns definitions
+		    // break;
 		}
 	    }
 
