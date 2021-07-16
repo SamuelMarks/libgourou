@@ -368,6 +368,22 @@ namespace gourou
 	appendTextElem(root, "adept:signature",   signature);
     }
     
+    void DRMProcessor::doOperatorAuth(std::string operatorURL)
+    {
+	pugi::xml_document authReq;
+	buildAuthRequest(authReq);
+	std::string authURL = operatorURL;
+	unsigned int fulfillPos = authURL.rfind("Fulfill");
+	if (fulfillPos == (authURL.size() - (sizeof("Fulfill")-1)))
+	    authURL = authURL.substr(0, fulfillPos-1);
+	ByteArray replyData = sendRequest(authReq, authURL + "/Auth");
+
+	pugi::xml_document initLicReq;
+	std::string activationURL = user->getProperty("//adept:activationURL");
+	buildInitLicenseServiceRequest(initLicReq, authURL);
+	sendRequest(initLicReq, activationURL + "/InitLicenseService");
+    }
+    
     void DRMProcessor::operatorAuth(std::string operatorURL)
     {
 	pugi::xpath_node_set operatorList = user->getProperties("//adept:operatorURL");
@@ -382,20 +398,9 @@ namespace gourou
 		return;
 	    }
 	}
-
-	pugi::xml_document authReq;
-	buildAuthRequest(authReq);
-	std::string authURL = operatorURL;
-	int fulfillPos = authURL.rfind("Fulfill");
-	if (fulfillPos == ((int)authURL.size() - 7))
-	    authURL = authURL.substr(0, fulfillPos-1);
-	ByteArray replyData = sendRequest(authReq, authURL + "/Auth");
-
-	pugi::xml_document initLicReq;
-	std::string activationURL = user->getProperty("//adept:activationURL");
-	buildInitLicenseServiceRequest(initLicReq, authURL);
-	sendRequest(initLicReq, activationURL + "/InitLicenseService");
-
+	
+	doOperatorAuth(operatorURL);
+	
 	// Add new operatorURL to list
 	pugi::xml_document activationDoc;
 	user->readActivation(activationDoc);
@@ -455,7 +460,7 @@ namespace gourou
 	
 	pugi::xml_document acsmDoc;
 
-	if (!acsmDoc.load_file(ACSMFile.c_str(), pugi::parse_ws_pcdata_single))
+	if (!acsmDoc.load_file(ACSMFile.c_str(), pugi::parse_ws_pcdata_single|pugi::parse_escapes))
 	    EXCEPTION(FF_INVALID_ACSM_FILE, "Invalid ACSM file " << ACSMFile);
 
 	GOUROU_LOG(INFO, "Fulfill " << ACSMFile);
@@ -494,7 +499,30 @@ namespace gourou
 
 	operatorAuth(operatorURL);
 	
-	ByteArray replyData = sendRequest(fulfillReq, operatorURL);
+	ByteArray replyData;
+
+	try
+	{
+	    replyData = sendRequest(fulfillReq, operatorURL);
+	}
+	catch (gourou::Exception& e)
+	{
+	    /*
+	      Operator requires authentication even if it's already in 
+	      our operator list
+	    */
+	    std::string errorMsg(e.what());
+	    if (e.getErrorCode() == GOUROU_ADEPT_ERROR &&
+		errorMsg.find("E_ADEPT_DISTRIBUTOR_AUTH") != std::string::npos)
+	    {
+		doOperatorAuth(operatorURL);
+		replyData = sendRequest(fulfillReq, operatorURL);
+	    }
+	    else
+	    {
+		throw e;
+	    }
+	}
 
 	pugi::xml_document fulfillReply;
 

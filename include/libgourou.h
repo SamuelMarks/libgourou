@@ -188,6 +188,7 @@ namespace gourou
 	void addNonce(pugi::xml_node& root);
 	void buildAuthRequest(pugi::xml_document& authReq);
 	void buildInitLicenseServiceRequest(pugi::xml_document& initLicReq, std::string operatorURL);
+	void doOperatorAuth(std::string operatorURL);
 	void operatorAuth(std::string operatorURL);
 	void buildFulfillRequest(pugi::xml_document& acsmDoc, pugi::xml_document& fulfillReq);
 	void buildActivateReq(pugi::xml_document& activateReq);

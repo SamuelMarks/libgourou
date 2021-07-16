@@ -129,6 +129,14 @@ namespace gourou
 	    fullmessage = strdup(msg.str().c_str());
 	}
 
+	Exception(const Exception& other)
+	{
+	    this->code = other.code;
+	    this->line = line;
+	    this->file = file;
+	    this->fullmessage = strdup(other.fullmessage);
+	}
+
 	~Exception()
 	{
 	    free(fullmessage);
