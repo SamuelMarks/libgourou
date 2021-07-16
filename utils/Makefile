@@ -1,5 +1,5 @@
 
-TARGETS=acsmdownloader activate
+TARGETS=acsmdownloader adept_activate
 
 CXXFLAGS=-Wall `pkg-config --cflags Qt5Core Qt5Network` -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
 ifneq ($(STATIC_UTILS),)
@@ -19,7 +19,7 @@ all: $(TARGETS)
 acsmdownloader: drmprocessorclientimpl.cpp acsmdownloader.cpp 
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-activate: drmprocessorclientimpl.cpp activate.cpp 
+adept_activate: drmprocessorclientimpl.cpp adept_activate.cpp 
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
