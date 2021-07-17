@@ -460,7 +460,7 @@ namespace gourou
 	
 	pugi::xml_document acsmDoc;
 
-	if (!acsmDoc.load_file(ACSMFile.c_str(), pugi::parse_ws_pcdata_single|pugi::parse_escapes))
+	if (!acsmDoc.load_file(ACSMFile.c_str(), pugi::parse_ws_pcdata_single|pugi::parse_escapes, pugi::encoding_utf8))
 	    EXCEPTION(FF_INVALID_ACSM_FILE, "Invalid ACSM file " << ACSMFile);
 
 	GOUROU_LOG(INFO, "Fulfill " << ACSMFile);
