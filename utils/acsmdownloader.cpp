@@ -66,6 +66,7 @@ public:
    
     void run()
     {
+	int ret = 0;
 	try
 	{
 	    DRMProcessorClientImpl client;
@@ -99,10 +100,10 @@ public:
 	} catch(std::exception& e)
 	{
 	    std::cout << e.what() << std::endl;
-	    this->app->exit(1);
+	    ret = 1;
 	}
 
-	this->app->exit(0);
+	this->app->exit(ret);
     }
 
 private:

@@ -100,10 +100,10 @@ static std::string getpass(const char *prompt, bool show_asterisk=false)
 }
 
 
-class Activate: public QRunnable
+class ADEPTActivate: public QRunnable
 {
 public:
-    Activate(QCoreApplication* app):
+    ADEPTActivate(QCoreApplication* app):
 	app(app)
     {
 	setAutoDelete(false);
@@ -111,6 +111,7 @@ public:
    
     void run()
     {
+	int ret = 0;
 	try
 	{
 	    DRMProcessorClientImpl client;
@@ -124,10 +125,10 @@ public:
 	} catch(std::exception& e)
 	{
 	    std::cout << e.what() << std::endl;
-	    this->app->exit(1);
+	    ret = 1;
 	}
 
-	this->app->exit(0);
+	this->app->exit(ret);
     }
 
 private:
@@ -262,7 +263,7 @@ int main(int argc, char** argv)
     
     QCoreApplication app(argc, argv);
     
-    Activate activate(&app);
+    ADEPTActivate activate(&app);
     QThreadPool::globalInstance()->start(&activate);
 
     ret = app.exec();

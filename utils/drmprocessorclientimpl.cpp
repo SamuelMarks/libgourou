@@ -119,7 +119,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     }
 
     if (reply->error() != QNetworkReply::NoError)
-	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << reply->error());
+	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << reply->errorString().toStdString());
 
     if (gourou::logLevel >= gourou::DEBUG)
     {
