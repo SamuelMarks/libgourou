@@ -291,7 +291,7 @@ namespace gourou
 	appendTextElem(root, "adept:nonce", nonce.toBase64().data());
 
 	time_t _time = time(0) + 10*60; // Cur time + 10 minutes
-	struct tm* tm_info = localtime(&_time);
+	struct tm* tm_info = gmtime(&_time);
 	char buffer[32];
 
 	strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
