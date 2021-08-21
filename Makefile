@@ -2,8 +2,21 @@
 AR ?= $(CROSS)ar
 CXX ?= $(CROSS)g++
 
-CXXFLAGS=-Wall -fPIC -I./include -I./lib -I./lib/pugixml/src/
-LDFLAGS=
+UPDFPARSERLIB = ./lib/updfparser/libupdfparser.a
+
+CXXFLAGS=-Wall -fPIC -I./include -I./lib -I./lib/pugixml/src/ -I./lib/updfparser/include
+LDFLAGS = $(UPDFPARSERLIB)
+
+BUILD_STATIC ?= 0
+BUILD_SHARED ?= 1
+
+TARGETS =
+ifneq (BUILD_STATIC, 0)
+  TARGETS += libgourou.a
+endif
+ifneq (BUILD_SHARED, 0)
+  TARGETS += libgourou.so
+endif
 
 ifneq ($(DEBUG),)
 CXXFLAGS += -ggdb -O0
@@ -18,12 +31,12 @@ TARGETDIR   := bin
 SRCEXT      := cpp
 OBJEXT      := o
 
-SOURCES=src/libgourou.cpp src/user.cpp src/device.cpp src/fulfillment_item.cpp src/bytearray.cpp src/pugixml.cpp
+SOURCES      = src/libgourou.cpp src/user.cpp src/device.cpp src/fulfillment_item.cpp src/bytearray.cpp src/pugixml.cpp
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 
 .PHONY: utils
 
-all: lib obj libgourou utils
+all: lib obj $(TARGETS) utils
 
 lib:
 	mkdir lib
@@ -38,9 +51,9 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 libgourou: libgourou.a libgourou.so
 
 libgourou.a: $(OBJECTS)
-	$(AR) crs $@ obj/*.o
+	$(AR) crs $@ obj/*.o $(LDFLAGS)
 
-libgourou.so: libgourou.a
+libgourou.so: $(OBJECTS) $(UPDFPARSERLIB)
 	$(CXX) obj/*.o $(LDFLAGS) -o $@ -shared
 
 utils:

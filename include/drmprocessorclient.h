@@ -21,6 +21,7 @@
 #define _DRMPROCESSORCLIENT_H_
 
 #include <string>
+#include <bytearray.h>
 
 namespace gourou
 {
@@ -93,11 +94,14 @@ namespace gourou
 	/**
 	 * @brief Send HTTP (GET or POST) request
 	 *
-	 * @param URL            HTTP URL
-	 * @param POSTData       POST data if needed, if not set, a GET request is done
-	 * @param contentType    Optional content type of POST Data
+	 * @param URL             HTTP URL
+	 * @param POSTData        POST data if needed, if not set, a GET request is done
+	 * @param contentType     Optional content type of POST Data
+	 * @param responseHeaders Optional Response headers of HTTP request
+	 *
+	 * @return data of HTTP response
 	 */
-	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string("")) = 0;
+	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0) = 0;
     };
 
     class RSAInterface
@@ -355,6 +359,27 @@ namespace gourou
 	 * @param handler        ZIP file handler
 	 */
 	virtual void zipClose(void* handler) = 0;
+
+	/**
+	 * @brief Inflate algorithm
+	 *
+	 * @param data           Data to inflate
+	 * @param result         Zipped data
+	 * @param wbits          Window bits value for libz
+	 */
+	virtual void inflate(std::string data, gourou::ByteArray& result,
+			     int wbits=-15) = 0;
+	
+	/**
+	 * @brief Deflate algorithm
+	 *
+	 * @param data           Data to deflate
+	 * @param result         Unzipped data
+	 * @param wbits          Window bits value for libz
+	 * @param compressionLevel Compression level for libz
+	 */
+	virtual void deflate(std::string data, gourou::ByteArray& result,
+			     int wbits=-15, int compressionLevel=8) = 0;
     };
     
     class DRMProcessorClient: public DigestInterface, public RandomInterface, public HTTPInterface, \

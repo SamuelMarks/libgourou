@@ -38,6 +38,7 @@
 #include <QFile>
 
 #include <zip.h>
+#include <zlib.h>
 
 #include <libgourou_common.h>
 #include <libgourou_log.h>
@@ -82,7 +83,7 @@ void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned int len
 }
 
 /* HTTP interface */
-std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType)
+std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders)
 {
     QNetworkRequest request(QUrl(URL.c_str()));
     QNetworkAccessManager networkManager;
@@ -121,12 +122,12 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     if (reply->error() != QNetworkReply::NoError)
 	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << reply->errorString().toStdString());
 
-    if (gourou::logLevel >= gourou::DEBUG)
-    {
-	QList<QByteArray> headers = reply->rawHeaderList();
-	for (int i = 0; i < headers.size(); ++i) {
+    QList<QByteArray> headers = reply->rawHeaderList();
+    for (int i = 0; i < headers.size(); ++i) {
+	if (gourou::logLevel >= gourou::DEBUG)
 	    std::cout << headers[i].constData() << " : "  << reply->rawHeader(headers[i]).constData() << std::endl;
-	}
+	if (responseHeaders)
+	    (*responseHeaders)[headers[i].constData()] = reply->rawHeader(headers[i]).constData();
     }
     
     replyData = reply->readAll();
@@ -419,4 +420,79 @@ void DRMProcessorClientImpl::zipDeleteFile(void* handler, const std::string& pat
 void DRMProcessorClientImpl::zipClose(void* handler)
 {
     zip_close((zip_t*)handler);
+}
+
+void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result,
+				     int wbits)
+{
+    unsigned int dataSize = data.size()*2;
+    unsigned char* buffer = new unsigned char[dataSize];
+    
+    z_stream infstream;
+
+    infstream.zalloc = Z_NULL;
+    infstream.zfree  = Z_NULL;
+    infstream.opaque = Z_NULL;
+
+    infstream.avail_in  = (uInt)data.size();
+    infstream.next_in   = (Bytef *)data.c_str(); // input char array
+    infstream.avail_out = (uInt)dataSize; // size of output
+    infstream.next_out  = (Bytef *)buffer; // output char array
+
+    int ret = inflateInit2(&infstream, wbits);
+
+    ret = ::inflate(&infstream, Z_SYNC_FLUSH);
+    while (ret == Z_OK || ret == Z_STREAM_END)
+    {
+	result.append(buffer, dataSize-infstream.avail_out);
+	if (ret == Z_STREAM_END) break;
+	infstream.avail_out = (uInt)dataSize; // size of output
+	infstream.next_out = (Bytef *)buffer; // output char array
+	ret = ::inflate(&infstream, Z_SYNC_FLUSH);
+    }
+
+    inflateEnd(&infstream);
+
+    delete[] buffer;
+
+    if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
+}
+	
+void DRMProcessorClientImpl::deflate(std::string data, gourou::ByteArray& result,
+			     int wbits, int compressionLevel)
+{
+    unsigned int dataSize = data.size();
+    unsigned char* buffer = new unsigned char[dataSize];
+    
+    z_stream defstream;
+
+    defstream.zalloc = Z_NULL;
+    defstream.zfree  = Z_NULL;
+    defstream.opaque = Z_NULL;
+
+    defstream.avail_in  = (uInt)data.size();
+    defstream.next_in   = (Bytef *)data.c_str(); // input char array
+    defstream.avail_out = (uInt)dataSize; // size of output
+    defstream.next_out  = (Bytef *)buffer; // output char array
+
+    int ret = deflateInit2(&defstream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits,
+			   compressionLevel, Z_DEFAULT_STRATEGY);
+
+    ret = ::deflate(&defstream, Z_SYNC_FLUSH);
+    while (ret == Z_OK || ret == Z_STREAM_END)
+    {
+	result.append(buffer, dataSize-defstream.avail_out);
+	if (ret == Z_STREAM_END) break;
+	defstream.avail_out = (uInt)dataSize; // size of output
+	defstream.next_out = (Bytef *)buffer; // output char array
+	ret = ::deflate(&defstream, Z_SYNC_FLUSH);
+    }
+   
+    deflateEnd(&defstream);
+
+    delete[] buffer;
+
+    if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
 }

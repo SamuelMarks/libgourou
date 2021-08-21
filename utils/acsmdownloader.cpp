@@ -79,9 +79,7 @@ public:
 	    {
 		filename = item->getMetadata("title");
 		if (filename == "")
-		    filename = "output.epub";
-		else
-		    filename += ".epub";
+		    filename = "output";
 	    }
 	    else
 		filename = outputFile;
@@ -95,7 +93,19 @@ public:
 		filename = std::string(outputDir) + "/" + filename;
 	    }
 	    
-	    processor.download(item, filename);
+	    gourou::DRMProcessor::ITEM_TYPE type = processor.download(item, filename);
+
+	    if (!outputFile)
+	    {
+		std::string finalName = filename;
+		if (type == gourou::DRMProcessor::ITEM_TYPE::PDF)
+		    finalName += ".pdf";
+		else
+		    finalName += ".epub";
+		QDir dir;
+		dir.rename(filename.c_str(), finalName.c_str());
+		filename = finalName;
+	    }
 	    std::cout << "Created " << filename << std::endl;
 	} catch(std::exception& e)
 	{

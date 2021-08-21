@@ -46,7 +46,7 @@ class DRMProcessorClientImpl : public gourou::DRMProcessorClient
     virtual void randBytes(unsigned char* bytesOut, unsigned int length);
 
     /* HTTP interface */
-    virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""));
+    virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0);
 
     virtual void RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
 				   const RSA_KEY_TYPE keyType, const std::string& password,
@@ -108,6 +108,10 @@ class DRMProcessorClientImpl : public gourou::DRMProcessorClient
     
     virtual void zipClose(void* handler);
     
+    virtual void inflate(std::string data, gourou::ByteArray& result, int wbits=-15);
+	
+    virtual void deflate(std::string data, gourou::ByteArray& result,
+			 int wbits=-15, int compressionLevel=8);
 };
 
 #endif

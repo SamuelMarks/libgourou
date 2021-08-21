@@ -22,6 +22,8 @@
 #include <time.h>
 #include <vector>
 
+#include <uPDFParser.h>
+
 #include <libgourou.h>
 #include <libgourou_common.h>
 #include <libgourou_log.h>
@@ -299,11 +301,11 @@ namespace gourou
 	appendTextElem(root, "adept:expiration", buffer);
     }
     
-    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType)
+    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType, std::map<std::string, std::string>* responseHeaders)
     {
 	if (contentType == 0)
 	    contentType = "";
-	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType);
+	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType, responseHeaders);
 
 	pugi::xml_document replyDoc;
 	replyDoc.load_buffer(reply.c_str(), reply.length());
@@ -580,12 +582,16 @@ namespace gourou
 	return new FulfillmentItem(fulfillReply, user);
     }
 
-    void DRMProcessor::download(FulfillmentItem* item, std::string path)
+    DRMProcessor::ITEM_TYPE DRMProcessor::download(FulfillmentItem* item, std::string path)
     {
+	ITEM_TYPE res = EPUB;
+	
 	if (!item)
 	    EXCEPTION(DW_NO_ITEM, "No item");
+
+	std::map<std::string, std::string> headers;
 	
-	ByteArray replyData = sendRequest(item->getDownloadURL());
+	ByteArray replyData = sendRequest(item->getDownloadURL(), "", 0, &headers);
 
 	writeFile(path, replyData);
 
@@ -593,9 +599,53 @@ namespace gourou
 
 	std::string rightsStr = item->getRights();
 
-	void* handler = client->zipOpen(path);
-	client->zipWriteFile(handler, "META-INF/rights.xml", rightsStr);
-	client->zipClose(handler);
+	if (headers.count("Content-Type") && headers["Content-Type"] == "application/pdf")
+	    res = PDF;
+
+	if (res == EPUB)
+	{
+	    void* handler = client->zipOpen(path);
+	    client->zipWriteFile(handler, "META-INF/rights.xml", rightsStr);
+	    client->zipClose(handler);
+	}
+	else if (res == PDF)
+	{
+	    uPDFParser::Parser parser;
+
+	    try
+	    {
+		GOUROU_LOG(DEBUG, "Parse PDF");
+		parser.parse(path);
+	    }
+	    catch(std::invalid_argument& e)
+	    {
+		GOUROU_LOG(ERROR, "Invalid PDF");
+		return res;
+	    }
+
+	    std::vector<uPDFParser::Object*> objects = parser.objects();
+	    std::vector<uPDFParser::Object*>::reverse_iterator it;
+
+	    for(it = objects.rbegin(); it != objects.rend(); it++)
+	    {
+		// Update EBX_HANDLER with rights
+		if ((*it)->hasKey("Filter") && (**it)["Filter"]->str() == "/EBX_HANDLER")
+		{
+		    uPDFParser::Object* ebx = (*it)->clone();
+		    (*ebx)["ADEPT_ID"] = new uPDFParser::String(item->getResource());
+		    (*ebx)["EBX_BOOKID"] = new uPDFParser::String(item->getResource());
+		    ByteArray zipped;
+		    client->deflate(rightsStr, zipped);
+		    (*ebx)["ADEPT_LICENSE"] = new uPDFParser::String(zipped.toBase64());
+		    parser.addObject(ebx);
+		    break;
+		}
+	    }
+
+	    parser.write(path, true);
+	}
+
+	return res;
     }
 
     void DRMProcessor::buildSignInRequest(pugi::xml_document& signInRequest,

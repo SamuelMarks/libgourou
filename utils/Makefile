@@ -5,7 +5,7 @@ CXXFLAGS=-Wall `pkg-config --cflags Qt5Core Qt5Network` -fPIC -I$(ROOT)/include 
 ifneq ($(STATIC_UTILS),)
 LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) $(ROOT)/libgourou.a -lcrypto -lzip
 else
-LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) -lgourou -lcrypto -lzip
+LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) -lgourou -lcrypto -lzip -lz
 endif
 
 ifneq ($(DEBUG),)

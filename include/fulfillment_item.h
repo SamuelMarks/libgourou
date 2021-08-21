@@ -53,10 +53,16 @@ namespace gourou
 	 */
 	std::string getDownloadURL();
 
+	/**
+	 * @brief Return resource value
+	 */
+	std::string getResource();
+
     private:
 	pugi::xml_node metadatas;
 	pugi::xml_document rights;
 	std::string downloadURL;
+	std::string resource;
 
 	void buildRights(const pugi::xml_node& licenseToken, User* user);
     };

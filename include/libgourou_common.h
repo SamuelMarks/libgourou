@@ -233,6 +233,32 @@ namespace gourou
         return trim(res);
     }
 
+    static inline std::string extractTextElem(const pugi::xml_node& doc, const char* tagName, bool throwOnNull=true)
+    {
+        pugi::xpath_node xpath_node = doc.select_node(tagName);
+
+        if (!xpath_node)
+	{
+	    if (throwOnNull)
+		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Tag " << tagName << " not found");
+	    
+            return "";
+	}
+
+	pugi::xml_node node = xpath_node.node().first_child();
+
+	if (!node)
+	{
+	    if (throwOnNull)
+		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Text element for tag " << tagName << " not found");
+	    
+            return "";
+	}
+
+	std::string res = node.value();
+        return trim(res);
+    }
+
     /**
      * @brief Append an element to root with a sub text element
      *
@@ -267,7 +293,7 @@ namespace gourou
      */
     static inline void writeFile(std::string path, ByteArray& data)
     {
-	writeFile(path, data.data(), data.length());
+	writeFile(path, data.data(), data.length()-1);
     }
 
     /**
