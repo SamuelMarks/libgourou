@@ -48,7 +48,6 @@ namespace gourou {
 	    uuid        = gourou::extractTextElem(activationDoc, "//adept:user", throwOnNull);
 	    deviceUUID  = gourou::extractTextElem(activationDoc, "//device", throwOnNull);
 	    deviceFingerprint = gourou::extractTextElem(activationDoc, "//fingerprint", throwOnNull);
-	    certificate = gourou::extractTextElem(activationDoc, "//adept:certificate", throwOnNull);
 	    authenticationCertificate = gourou::extractTextElem(activationDoc, "//adept:authenticationCertificate", throwOnNull);
 	    privateLicenseKey = gourou::extractTextElem(activationDoc, "//adept:privateLicenseKey", throwOnNull);
 	    username    = gourou::extractTextElem(activationDoc, "//adept:username", throwOnNull);
@@ -60,6 +59,15 @@ namespace gourou {
 	    {
 		if (throwOnNull)
 		    EXCEPTION(USER_INVALID_ACTIVATION_FILE, "Invalid activation file");
+	    }
+
+	    pugi::xpath_node_set nodeSet = activationDoc.select_nodes("//adept:licenseServices/adept:licenseServiceInfo");
+	    for (pugi::xpath_node_set::const_iterator it = nodeSet.begin();
+		 it != nodeSet.end(); ++it)
+	    {
+		std::string url = gourou::extractTextElem(it->node(), "adept:licenseURL");
+		std::string certificate = gourou::extractTextElem(it->node(), "adept:certificate");
+		licenseServiceCertificates[url] = certificate;
 	    }
 	}
 	catch(gourou::Exception& e)
@@ -74,7 +82,6 @@ namespace gourou {
     std::string& User::getDeviceFingerprint() { return deviceFingerprint; }
     std::string& User::getUsername()          { return username; }
     std::string& User::getLoginMethod()       { return loginMethod; }
-    std::string& User::getCertificate()       { return certificate; }
     std::string& User::getAuthenticationCertificate() { return authenticationCertificate; }
     std::string& User::getPrivateLicenseKey() { return privateLicenseKey; }
     
@@ -200,4 +207,13 @@ namespace gourou {
 	
 	return user;
     }
+
+    std::string User::getLicenseServiceCertificate(std::string url)
+    {
+	if (licenseServiceCertificates.count(trim(url)))
+	    return licenseServiceCertificates[trim(url)];
+
+	return "";
+    }
+
 }

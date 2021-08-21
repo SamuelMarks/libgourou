@@ -36,6 +36,12 @@ namespace gourou
 	if (downloadURL == "")
 	    EXCEPTION(FFI_INVALID_FULFILLMENT_DATA, "No download URL in document");
 	
+	node = doc.select_node("/envelope/fulfillmentResult/resourceItemInfo/resource").node();
+	resource = node.first_child().value();
+
+	if (resource == "")
+	    EXCEPTION(FFI_INVALID_FULFILLMENT_DATA, "No resource in document");
+
 	pugi::xml_node licenseToken = doc.select_node("/envelope/fulfillmentResult/resourceItemInfo/licenseToken").node();
 
 	if (!licenseToken)
@@ -55,12 +61,14 @@ namespace gourou
 	pugi::xml_node newLicenseToken = root.append_copy(licenseToken);
 	if (!newLicenseToken.attribute("xmlns"))
 	    newLicenseToken.append_attribute("xmlns") = ADOBE_ADEPT_NS;
-	
-	pugi::xml_node licenseServiceInfo = root.append_child("licenseServiceInfo");
-	licenseServiceInfo.append_attribute("xmlns") = ADOBE_ADEPT_NS;
-	licenseServiceInfo.append_copy(licenseToken.select_node("licenseURL").node());
-	pugi::xml_node certificate = licenseServiceInfo.append_child("certificate");
-	certificate.append_child(pugi::node_pcdata).set_value(user->getCertificate().c_str());
+
+	pugi::xml_node licenseServiceInfo = root.append_child("adept:licenseServiceInfo");
+	pugi::xml_node licenseURL = licenseToken.select_node("licenseURL").node();
+	licenseURL.set_name("adept:licenseURL");
+	licenseServiceInfo.append_copy(licenseURL);
+	pugi::xml_node certificate = licenseServiceInfo.append_child("adept:certificate");
+	std::string certificateValue = user->getLicenseServiceCertificate(licenseURL.first_child().value());
+	certificate.append_child(pugi::node_pcdata).set_value(certificateValue.c_str());
     }
     
     std::string FulfillmentItem::getMetadata(std::string name)
@@ -87,5 +95,10 @@ namespace gourou
     std::string FulfillmentItem::getDownloadURL()
     {
 	return downloadURL;
+    }
+
+    std::string FulfillmentItem::getResource()
+    {
+	return resource;
     }
 }

@@ -14,13 +14,15 @@
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with libgourou.  If not, see <http://www.gnu.org/licenses/>.
+  along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _USER_H_
 #define _USER_H_
 
 #include <string>
+#include <map>
+
 #include "bytearray.h"
 
 #include <pugixml.hpp>
@@ -46,7 +48,7 @@ namespace gourou
 	std::string& getDeviceFingerprint();
 	std::string& getUsername();
 	std::string& getLoginMethod();
-	std::string& getCertificate();
+	std::string  getLicenseServiceCertificate(std::string url);
 	std::string& getAuthenticationCertificate();
 	std::string& getPrivateLicenseKey();
 
@@ -95,7 +97,7 @@ namespace gourou
 	std::string deviceFingerprint;
 	std::string username;
 	std::string loginMethod;
-	std::string certificate;
+	std::map<std::string,std::string> licenseServiceCertificates;
 	std::string authenticationCertificate;
 	std::string privateLicenseKey;
 

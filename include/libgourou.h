@@ -194,6 +194,8 @@ namespace gourou
 	void buildActivateReq(pugi::xml_document& activateReq);
 	ByteArray sendFulfillRequest(const pugi::xml_document& document, const std::string& url);
 	void buildSignInRequest(pugi::xml_document& signInRequest, const std::string& adobeID, const std::string& adobePassword, const std::string& authenticationCertificate);
+	void fetchLicenseServiceCertificate(const std::string& licenseURL,
+					    const std::string& operatorURL);
     };
 }
 

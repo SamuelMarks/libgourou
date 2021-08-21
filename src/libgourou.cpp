@@ -33,6 +33,7 @@
 #define ASN_TEXT        0x04
 #define ASN_ATTRIBUTE   0x05
 
+
 namespace gourou
 {
     GOUROU_LOG_LEVEL logLevel = WARN;
@@ -453,6 +454,49 @@ namespace gourou
 	appendTextElem(activationToken, "adept:device", user->getDeviceUUID());
     }
 
+    void DRMProcessor::fetchLicenseServiceCertificate(const std::string& licenseURL,
+						      const std::string& operatorURL)
+    {
+	if (user->getLicenseServiceCertificate(licenseURL) != "")
+	    return;
+
+	std::string licenseServiceInfoReq = operatorURL + "/LicenseServiceInfo?licenseURL=" + licenseURL;
+	
+	ByteArray replyData;
+	replyData = sendRequest(licenseServiceInfoReq);
+
+	pugi::xml_document licenseServicesDoc;
+	licenseServicesDoc.load_buffer(replyData.data(), replyData.length());
+
+	// Add new license certificate
+	pugi::xml_document activationDoc;
+	user->readActivation(activationDoc);
+
+	pugi::xml_node root;
+	pugi::xpath_node xpathRes = activationDoc.select_node("//adept:licenseServices");
+
+	// Create adept:licenseServices if it doesn't exists
+	if (!xpathRes)
+	{
+	    xpathRes = activationDoc.select_node("/activationInfo");
+	    root = xpathRes.node();
+	    root = root.append_child("adept:licenseServices");
+	    root.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
+	}
+	else
+	    root = xpathRes.node();
+
+	root = root.append_child("adept:licenseServiceInfo");
+
+	std::string certificate = extractTextElem(licenseServicesDoc,
+						  "/licenseServiceInfo/certificate");
+
+	appendTextElem(root, "adept:licenseURL", licenseURL);
+	appendTextElem(root, "adept:certificate", certificate);
+
+	user->updateActivationFile(activationDoc);
+    }
+    
     FulfillmentItem* DRMProcessor::fulfill(const std::string& ACSMFile)
     {
 	if (!user->getPKCS12().length())
@@ -495,15 +539,16 @@ namespace gourou
 	    EXCEPTION(FF_NO_OPERATOR_URL, "OperatorURL not found in ACSM document");
 	
 	std::string operatorURL = node.node().first_child().value();
-	operatorURL = trim(operatorURL) + "/Fulfill";
+	operatorURL = trim(operatorURL);
+	std::string fulfillURL = operatorURL + "/Fulfill";
 
-	operatorAuth(operatorURL);
+	operatorAuth(fulfillURL);
 	
 	ByteArray replyData;
 
 	try
 	{
-	    replyData = sendRequest(fulfillReq, operatorURL);
+	    replyData = sendRequest(fulfillReq, fulfillURL);
 	}
 	catch (gourou::Exception& e)
 	{
@@ -515,8 +560,8 @@ namespace gourou
 	    if (e.getErrorCode() == GOUROU_ADEPT_ERROR &&
 		errorMsg.find("E_ADEPT_DISTRIBUTOR_AUTH") != std::string::npos)
 	    {
-		doOperatorAuth(operatorURL);
-		replyData = sendRequest(fulfillReq, operatorURL);
+		doOperatorAuth(fulfillURL);
+		replyData = sendRequest(fulfillReq, fulfillURL);
 	    }
 	    else
 	    {
@@ -527,7 +572,11 @@ namespace gourou
 	pugi::xml_document fulfillReply;
 
 	fulfillReply.load_string((const char*)replyData.data());
+
+	std::string licenseURL = extractTextElem(fulfillReply, "//licenseToken/licenseURL");
 	
+	fetchLicenseServiceCertificate(licenseURL, operatorURL);
+
 	return new FulfillmentItem(fulfillReply, user);
     }
 
