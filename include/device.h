@@ -14,7 +14,7 @@
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with libgourou.  If not, see <http://www.gnu.org/licenses/>.
+  along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _DEVICE_H_
@@ -48,7 +48,7 @@ namespace gourou
 	const unsigned char* getDeviceKey();
 
 	/**
-	 * @brief Get one value of device.xml (deviceClass, deviceSerial, deviceName, deviceType, jobbes, clientOS, clientLocale)
+	 * @brief Get one value of device.xml (deviceClass, deviceSerial, deviceName, deviceType, hobbes, clientOS, clientLocale)
 	 */
 	std::string getProperty(const std::string& property, const std::string& _default=std::string(""));
 	std::string operator[](const std::string& property);

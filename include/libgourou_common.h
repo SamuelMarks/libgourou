@@ -14,7 +14,7 @@
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with libgourou.  If not, see <http://www.gnu.org/licenses/>.
+  along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _LIBGOUROU_COMMON_H_
@@ -109,7 +109,6 @@ namespace gourou
 	CLIENT_ZIP_ERROR,
 	CLIENT_GENERIC_EXCEPTION,
 	CLIENT_NETWORK_ERROR,
-	
     };
 
     /**
