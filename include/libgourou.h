@@ -164,6 +164,8 @@ namespace gourou
 	 */
 	std::string serializeRSAPrivateKey(void* rsa);
 
+	void exportPrivateLicenseKey(std::string path);
+	
 	/**
 	 * @brief Get current user
 	 */
