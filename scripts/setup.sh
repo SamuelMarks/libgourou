@@ -15,8 +15,8 @@ fi
 
 # uPDFParser
 if [ ! -d lib/updfparser ] ; then
-    git clone http://indefero.soutade.fr/p/updfparser lib/updfparser
+    git clone git://soutade.fr/updfparser.git lib/updfparser
     pushd lib/updfparser
-    make STATIC=1 SHARED=0
+    make BUILD_STATIC=1 BUILD_SHARED=0
     popd
 fi
