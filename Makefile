@@ -9,14 +9,19 @@ LDFLAGS = $(UPDFPARSERLIB)
 
 BUILD_STATIC ?= 0
 BUILD_SHARED ?= 1
+BUILD_UTILS  ?= 1
 
 TARGETS =
-ifneq (BUILD_STATIC, 0)
+ifneq ($(BUILD_STATIC), 0)
   TARGETS += libgourou.a
 endif
-ifneq (BUILD_SHARED, 0)
+ifneq ($(BUILD_SHARED), 0)
   TARGETS += libgourou.so
 endif
+ifneq ($(BUILD_UTILS), 0)
+  TARGETS += build_utils
+endif
+
 
 ifneq ($(DEBUG),)
 CXXFLAGS += -ggdb -O0
@@ -34,9 +39,7 @@ OBJEXT      := o
 SOURCES      = src/libgourou.cpp src/user.cpp src/device.cpp src/fulfillment_item.cpp src/bytearray.cpp src/pugixml.cpp
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 
-.PHONY: utils
-
-all: lib obj $(TARGETS) utils
+all: lib obj $(TARGETS)
 
 lib:
 	mkdir lib
@@ -56,7 +59,7 @@ libgourou.a: $(OBJECTS)
 libgourou.so: $(OBJECTS) $(UPDFPARSERLIB)
 	$(CXX) obj/*.o $(LDFLAGS) -o $@ -shared
 
-utils:
+build_utils:
 	make -C utils ROOT=$(PWD) CXX=$(CXX) AR=$(AR) DEBUG=$(DEBUG) STATIC_UTILS=$(STATIC_UTILS)
 
 clean:
