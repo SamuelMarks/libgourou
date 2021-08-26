@@ -272,17 +272,23 @@ int main(int argc, char** argv)
     ACSMDownloader downloader(&app);
 
     int i;
+    bool hasErrors = false;
+    const char* orig;
     for (i=0; i<(int)ARRAY_SIZE(files); i++)
     {
+	orig = *files[i];
 	*files[i] = findFile(*files[i]);
 	if (!*files[i])
 	{
-	    std::cout << "Error : " << *files[i] << " doesn't exists" << std::endl;
+	    std::cout << "Error : " << orig << " doesn't exists, did you activate your device ?" << std::endl;
 	    ret = -1;
-	    goto end;
+	    hasErrors = true;
 	}
     }
 
+    if (hasErrors)
+	goto end;
+    
     if (exportPrivateKey)
     {
 	if (acsmFile)
