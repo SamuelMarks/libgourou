@@ -68,6 +68,7 @@ namespace gourou
 
     enum DOWNLOAD_ERROR {
 	DW_NO_ITEM = 0x1200,
+	DW_NO_EBX_HANDLER,
     };
 
     enum SIGNIN_ERROR {

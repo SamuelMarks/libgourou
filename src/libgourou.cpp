@@ -611,7 +611,8 @@ namespace gourou
 	else if (res == PDF)
 	{
 	    uPDFParser::Parser parser;
-
+	    bool EBXHandlerFound = false;
+	    
 	    try
 	    {
 		GOUROU_LOG(DEBUG, "Parse PDF");
@@ -631,6 +632,7 @@ namespace gourou
 		// Update EBX_HANDLER with rights
 		if ((*it)->hasKey("Filter") && (**it)["Filter"]->str() == "/EBX_HANDLER")
 		{
+		    EBXHandlerFound = true;
 		    uPDFParser::Object* ebx = (*it)->clone();
 		    (*ebx)["ADEPT_ID"] = new uPDFParser::String(item->getResource());
 		    (*ebx)["EBX_BOOKID"] = new uPDFParser::String(item->getResource());
@@ -642,7 +644,12 @@ namespace gourou
 		}
 	    }
 
-	    parser.write(path, true);
+	    if (EBXHandlerFound)
+		parser.write(path, true);
+	    else
+	    {
+		EXCEPTION(DW_NO_EBX_HANDLER, "EBX_HANDLER not found");
+	    }
 	}
 
 	return res;
