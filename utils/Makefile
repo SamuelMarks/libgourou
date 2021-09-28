@@ -2,10 +2,11 @@
 TARGETS=acsmdownloader adept_activate
 
 CXXFLAGS=-Wall `pkg-config --cflags Qt5Core Qt5Network` -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
+LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) -lcrypto -lzip -lz
 ifneq ($(STATIC_UTILS),)
-LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) $(ROOT)/libgourou.a -lcrypto -lzip
+LDFLAGS += $(ROOT)/libgourou.a
 else
-LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) -lgourou -lcrypto -lzip -lz
+LDFLAGS += -lgourou
 endif
 
 ifneq ($(DEBUG),)
