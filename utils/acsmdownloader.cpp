@@ -79,6 +79,8 @@ public:
 		std::string filename;
 		if (!outputFile)
 		    filename = std::string("Adobe_PrivateLicenseKey--") + user->getUsername() + ".der";
+		else
+		    filename = outputFile;
 	    
 		if (outputDir)
 		{
@@ -173,7 +175,7 @@ static void usage(const char* cmd)
 {
     std::cout << "Download EPUB file from ACSM request file" << std::endl;
     
-    std::cout << "Usage: " << cmd << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-s|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)" << std::endl << std::endl;
+    std::cout << "Usage: " << cmd << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)" << std::endl << std::endl;
     
     std::cout << "  " << "-d|--device-file"     << "\t"   << "device.xml file from eReader" << std::endl;
     std::cout << "  " << "-a|--activation-file" << "\t"   << "activation.xml file from eReader" << std::endl;
