@@ -37,14 +37,14 @@ namespace gourou
     ByteArray::ByteArray(const char* data, int length)
     {
 	if (length == -1)
-	    length = strlen(data) + 1;
+	    length = strlen(data);
 
 	initData((const unsigned char*)data, (unsigned int) length);
     }
     
     ByteArray::ByteArray(const std::string& str)
     {
-	initData((unsigned char*)str.c_str(), (unsigned int)str.length() + 1);
+	initData((unsigned char*)str.c_str(), (unsigned int)str.length());
     }
 
     void ByteArray::initData(const unsigned char* data, unsigned int length)

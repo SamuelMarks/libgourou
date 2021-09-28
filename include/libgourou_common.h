@@ -293,7 +293,7 @@ namespace gourou
      */
     static inline void writeFile(std::string path, ByteArray& data)
     {
-	writeFile(path, data.data(), data.length()-1);
+	writeFile(path, data.data(), data.length());
     }
 
     /**

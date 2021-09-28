@@ -907,7 +907,7 @@ namespace gourou
 
 	ByteArray privateLicenseKey = ByteArray::fromBase64(user->getPrivateLicenseKey());
 	/* In adobekey.py, we get base64 decoded data [26:] */
-	write(fd, privateLicenseKey.data()+26, privateLicenseKey.length()-1-26);
+	write(fd, privateLicenseKey.data()+26, privateLicenseKey.length()-26);
 	
 	close(fd);
     }
