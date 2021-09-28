@@ -54,7 +54,7 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 libgourou: libgourou.a libgourou.so
 
 libgourou.a: $(OBJECTS)
-	$(AR) crs $@ obj/*.o $(LDFLAGS)
+	$(AR) crs $@ obj/*.o ./lib/updfparser/obj/*.o
 
 libgourou.so: $(OBJECTS) $(UPDFPARSERLIB)
 	$(CXX) obj/*.o $(LDFLAGS) -o $@ -shared
