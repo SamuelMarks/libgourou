@@ -116,7 +116,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     if (location.size() != 0)
     {
 	GOUROU_LOG(gourou::DEBUG, "New location");
-	return sendHTTPRequest(location.constData(), POSTData, contentType);
+	return sendHTTPRequest(location.constData(), POSTData, contentType, responseHeaders);
     }
 
     if (reply->error() != QNetworkReply::NoError)
