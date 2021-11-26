@@ -35,7 +35,7 @@
 
 class DRMProcessorClientImpl : public gourou::DRMProcessorClient
 {
-    public:
+public:
     /* Digest interface */
     virtual void* createDigest(const std::string& digestName);
     virtual int digestUpdate(void* handler, unsigned char* data, unsigned int length);
@@ -53,6 +53,11 @@ class DRMProcessorClientImpl : public gourou::DRMProcessorClient
 				   const unsigned char* data, unsigned dataLength,
 				   unsigned char* res);
 			    
+    virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+				   const RSA_KEY_TYPE keyType, const std::string& password,
+				   const unsigned char* data, unsigned dataLength,
+				   unsigned char* res);
+
     virtual void RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
 				  const RSA_KEY_TYPE keyType,
 				  const unsigned char* data, unsigned dataLength,
@@ -100,17 +105,18 @@ class DRMProcessorClientImpl : public gourou::DRMProcessorClient
     /* ZIP Interface */
     virtual void* zipOpen(const std::string& path);
     
-    virtual std::string zipReadFile(void* handler, const std::string& path);
+    virtual void zipReadFile(void* handler, const std::string& path, gourou::ByteArray& result, bool decompress=true);
     
-    virtual void zipWriteFile(void* handler, const std::string& path, const std::string& content);
+    virtual void zipWriteFile(void* handler, const std::string& path, gourou::ByteArray& content);
     
     virtual void zipDeleteFile(void* handler, const std::string& path);
     
     virtual void zipClose(void* handler);
     
-    virtual void inflate(std::string data, gourou::ByteArray& result, int wbits=-15);
+    virtual void inflate(gourou::ByteArray& data, gourou::ByteArray& result,
+			 int wbits=-15);
 	
-    virtual void deflate(std::string data, gourou::ByteArray& result,
+    virtual void deflate(gourou::ByteArray& data, gourou::ByteArray& result,
 			 int wbits=-15, int compressionLevel=8);
 };
 

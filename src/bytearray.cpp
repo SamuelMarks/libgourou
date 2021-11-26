@@ -24,33 +24,48 @@
 
 namespace gourou
 {
-    std::map<const unsigned char*, int> ByteArray::refCounter;
+    std::map<unsigned char*, int> ByteArray::refCounter;
     
-    ByteArray::ByteArray():_data(0), _length(0)
+    ByteArray::ByteArray(bool useMalloc):_useMalloc(useMalloc), _data(0), _length(0)
     {}
 
-    ByteArray::ByteArray(const unsigned char* data, unsigned int length)
+    ByteArray::ByteArray(unsigned int length, bool useMalloc):
+	_useMalloc(useMalloc)
+    {
+	initData(0, length);
+    }
+    
+    ByteArray::ByteArray(const unsigned char* data, unsigned int length):
+	_useMalloc(false)
     {
 	initData(data, length);
     }
     
-    ByteArray::ByteArray(const char* data, int length)
+    ByteArray::ByteArray(const char* data, int length):
+	_useMalloc(false)
     {
 	if (length == -1)
 	    length = strlen(data);
 
-	initData((const unsigned char*)data, (unsigned int) length);
+	initData((unsigned char*)data, (unsigned int) length);
     }
     
-    ByteArray::ByteArray(const std::string& str)
+    ByteArray::ByteArray(const std::string& str):
+	_useMalloc(false)
     {
 	initData((unsigned char*)str.c_str(), (unsigned int)str.length());
     }
 
     void ByteArray::initData(const unsigned char* data, unsigned int length)
     {
-	_data = new unsigned char[length];
-	memcpy((void*)_data, data, length);
+	if (_useMalloc)
+	    _data = (unsigned char*)malloc(length);
+	else
+	    _data = new unsigned char[length];
+
+	if (data)
+	    memcpy((void*)_data, data, length);
+
 	_length = length;
 
 	addRef();
@@ -58,6 +73,7 @@ namespace gourou
     
     ByteArray::ByteArray(const ByteArray& other)
     {
+	this->_useMalloc = other._useMalloc;
 	this->_data = other._data;
 	this->_length = other._length;
 
@@ -68,6 +84,7 @@ namespace gourou
     {
 	delRef();
 	
+	this->_useMalloc = other._useMalloc;
 	this->_data = other._data;
 	this->_length = other._length;
 
@@ -97,7 +114,10 @@ namespace gourou
 	
 	if (refCounter[_data] == 1)
 	{
-	    delete[] _data;
+	    if (_useMalloc)
+		free(_data);
+	    else
+		delete[] _data;
 	    refCounter.erase(_data);
 	}
 	else
@@ -152,8 +172,13 @@ namespace gourou
 
     void ByteArray::append(const unsigned char* data, unsigned int length)
     {
-	const unsigned char* oldData = _data;
-	unsigned char* newData = new unsigned char[_length+length];
+	unsigned char* oldData = _data;
+	unsigned char* newData;
+
+	if (_useMalloc)
+	    newData = (unsigned char*)malloc(_length+length);
+	else
+	    newData = new unsigned char[_length+length];
 
 	memcpy(newData, oldData, _length);
 	
@@ -170,4 +195,10 @@ namespace gourou
     void ByteArray::append(unsigned char c) { append(&c, 1);}
     void ByteArray::append(const char* str) { append((const unsigned char*)str, strlen(str));}
     void ByteArray::append(const std::string& str) { append((const unsigned char*)str.c_str(), str.length()); }
+
+    void ByteArray::resize(unsigned length)
+    {
+	delRef();
+	initData(0, length);
+    }
 }

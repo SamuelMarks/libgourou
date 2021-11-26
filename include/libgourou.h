@@ -40,7 +40,7 @@
 #define ACS_SERVER              "http://adeactivate.adobe.com/adept"
 #endif
 
-#define LIBGOUROU_VERSION       "0.4.4"
+#define LIBGOUROU_VERSION       "0.5"
 
 namespace gourou
 {
@@ -181,6 +181,8 @@ namespace gourou
 	 */
 	DRMProcessorClient* getClient() { return client; }
 		
+	void removeDRM(const std::string& ePubFile, ITEM_TYPE type);
+	
     private:
 	gourou::DRMProcessorClient* client;
         gourou::Device* device;
@@ -204,6 +206,7 @@ namespace gourou
 	void buildSignInRequest(pugi::xml_document& signInRequest, const std::string& adobeID, const std::string& adobePassword, const std::string& authenticationCertificate);
 	void fetchLicenseServiceCertificate(const std::string& licenseURL,
 					    const std::string& operatorURL);
+	void removeEPubDRM(const std::string& ePubFile);
     };
 }
 

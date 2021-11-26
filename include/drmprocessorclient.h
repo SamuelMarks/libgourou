@@ -129,6 +129,22 @@ namespace gourou
 				       unsigned char* res) = 0;
 			    
 	/**
+	 * @brief Decrypt data with RSA private key. Data is padded using PKCS1.5
+	 *
+	 * @param RSAKey         RSA key in binary form
+	 * @param RSAKeyLength   RSA key length
+	 * @param keyType        Key type
+	 * @param password       Optional password for RSA PKCS12 certificate
+	 * @param data           Data to encrypt
+	 * @param dataLength     Data length
+	 * @param res            Encryption result (pre allocated buffer)
+	 */
+	virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+				       const RSA_KEY_TYPE keyType, const std::string& password,
+				       const unsigned char* data, unsigned dataLength,
+				       unsigned char* res) = 0;
+
+	/**
 	 * @brief Encrypt data with RSA public key. Data is padded using PKCS1.5
 	 *
 	 * @param RSAKey         RSA key in binary form
@@ -331,19 +347,19 @@ namespace gourou
 	 *
 	 * @param handler        ZIP file handler
 	 * @param path           Internal path inside zip file
-	 *
-	 * @return File content
+	 * @param result         Result buffer
+	 * @param decompress     If false, don't decompress read data
 	 */
-	virtual std::string zipReadFile(void* handler, const std::string& path) = 0;
+	virtual void zipReadFile(void* handler, const std::string& path, ByteArray& result, bool decompress=true) = 0;
 	
 	/**
 	 * @brief Write zip internal file
 	 *
 	 * @param handler        ZIP file handler
 	 * @param path           Internal path inside zip file
-	 * @param content        Internal file content
+	 * @param content        File content
 	 */
-	virtual void zipWriteFile(void* handler, const std::string& path, const std::string& content) = 0;
+	virtual void zipWriteFile(void* handler, const std::string& path, ByteArray& content) = 0;
 
 	/**
 	 * @brief Delete zip internal file
@@ -367,7 +383,7 @@ namespace gourou
 	 * @param result         Zipped data
 	 * @param wbits          Window bits value for libz
 	 */
-	virtual void inflate(std::string data, gourou::ByteArray& result,
+	virtual void inflate(gourou::ByteArray& data, gourou::ByteArray& result,
 			     int wbits=-15) = 0;
 	
 	/**
@@ -378,7 +394,7 @@ namespace gourou
 	 * @param wbits          Window bits value for libz
 	 * @param compressionLevel Compression level for libz
 	 */
-	virtual void deflate(std::string data, gourou::ByteArray& result,
+	virtual void deflate(gourou::ByteArray& data, gourou::ByteArray& result,
 			     int wbits=-15, int compressionLevel=8) = 0;
     };
     

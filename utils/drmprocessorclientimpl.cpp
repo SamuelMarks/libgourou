@@ -37,8 +37,8 @@
 #include <QNetworkAccessManager>
 #include <QFile>
 
-#include <zip.h>
 #include <zlib.h>
+#include <zip.h>
 
 #include <libgourou_common.h>
 #include <libgourou_log.h>
@@ -163,13 +163,44 @@ void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsi
 
     if (gourou::logLevel >= gourou::DEBUG)
     {
-	printf("Sig : ");
-	for(int i=0; i<(int)sizeof(res); i++)
+	printf("Encrypted : ");
+	for(int i=0; i<ret; i++)
 	    printf("%02x ", res[i]);
 	printf("\n");
     }
 }
 			    
+void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+					       const RSA_KEY_TYPE keyType, const std::string& password,
+					       const unsigned char* data, unsigned dataLength,
+					       unsigned char* res)
+{
+    BIO* mem=BIO_new_mem_buf(RSAKey, RSAKeyLength);
+    PKCS8_PRIV_KEY_INFO* p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
+
+    if (!p8inf)
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
+
+    EVP_PKEY* pkey = EVP_PKCS82PKEY(p8inf);
+    RSA * rsa;
+    int ret;
+
+    rsa = EVP_PKEY_get1_RSA(pkey);
+
+    ret = RSA_private_decrypt(dataLength, data, res, rsa, RSA_NO_PADDING);
+
+    if (ret < 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    if (gourou::logLevel >= gourou::DEBUG)
+    {
+	printf("Decrypted : ");
+	for(int i=0; i<ret; i++)
+	    printf("%02x ", res[i]);
+	printf("\n");
+    }
+}
+
 void DRMProcessorClientImpl::RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
 					      const RSA_KEY_TYPE keyType,
 					      const unsigned char* data, unsigned dataLength,
@@ -371,35 +402,39 @@ void* DRMProcessorClientImpl::zipOpen(const std::string& path)
     return handler;
 }
 
-std::string DRMProcessorClientImpl::zipReadFile(void* handler, const std::string& path)
+void DRMProcessorClientImpl::zipReadFile(void* handler, const std::string& path, gourou::ByteArray& result, bool decompress)
 {
     std::string res;
-    unsigned char* buffer;
     zip_stat_t sb;
     
     if (zip_stat((zip_t *)handler, path.c_str(), 0, &sb) < 0)
-	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Zip error " << zip_strerror((zip_t *)handler));
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Zip error, no file " << path << ", " << zip_strerror((zip_t *)handler));
 
     if (!(sb.valid & (ZIP_STAT_INDEX|ZIP_STAT_SIZE)))
 	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Required fields missing");
-    
-    buffer = new unsigned char[sb.size];
-    
-    zip_file_t *f = zip_fopen_index((zip_t *)handler, sb.index, ZIP_FL_COMPRESSED);
 
-    zip_fread(f, buffer, sb.size);
+    result.resize(sb.size);
+    
+    zip_file_t *f = zip_fopen_index((zip_t *)handler, sb.index, (decompress)?0:ZIP_FL_COMPRESSED);
+    zip_fread(f, result.data(), sb.size);
     zip_fclose(f);
-
-    res = std::string((char*)buffer, sb.size);
-    delete[] buffer;
-    
-    return res;
 }
 
-void DRMProcessorClientImpl::zipWriteFile(void* handler, const std::string& path, const std::string& content)
+void DRMProcessorClientImpl::zipWriteFile(void* handler, const std::string& path, gourou::ByteArray& content)
 {
-    zip_source_t* s = zip_source_buffer((zip_t*)handler, content.c_str(), content.length(), 0);
-    if (zip_file_add((zip_t*)handler, path.c_str(), s, ZIP_FL_OVERWRITE|ZIP_FL_ENC_UTF_8) < 0)
+    zip_int64_t ret;
+    
+    zip_source_t* s = zip_source_buffer((zip_t*)handler, content.takeShadowData(), content.length(), 1);
+
+    zip_int64_t idx = zip_name_locate((zip_t*)handler, path.c_str(), 0);
+
+    // File doesn't exists
+    if (idx == -1)
+	ret = zip_file_add((zip_t*)handler, path.c_str(), s, 0);
+    else
+	ret = zip_file_replace((zip_t*)handler, idx, s, ZIP_FL_OVERWRITE);
+
+    if (ret < 0)
     {
 	zip_source_free(s);
 	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Zip error " << zip_strerror((zip_t *)handler));
@@ -422,7 +457,7 @@ void DRMProcessorClientImpl::zipClose(void* handler)
     zip_close((zip_t*)handler);
 }
 
-void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result,
+void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray& result,
 				     int wbits)
 {
     unsigned int dataSize = data.size()*2;
@@ -435,7 +470,7 @@ void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result
     infstream.opaque = Z_NULL;
 
     infstream.avail_in  = (uInt)data.size();
-    infstream.next_in   = (Bytef *)data.c_str(); // input char array
+    infstream.next_in   = (Bytef *)data.data(); // input char array
     infstream.avail_out = (uInt)dataSize; // size of output
     infstream.next_out  = (Bytef *)buffer; // output char array
 
@@ -464,7 +499,7 @@ void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result
 	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
 }
 	
-void DRMProcessorClientImpl::deflate(std::string data, gourou::ByteArray& result,
+void DRMProcessorClientImpl::deflate(gourou::ByteArray& data, gourou::ByteArray& result,
 				     int wbits, int compressionLevel)
 {
     unsigned int dataSize = data.size();
@@ -476,8 +511,8 @@ void DRMProcessorClientImpl::deflate(std::string data, gourou::ByteArray& result
     defstream.zfree  = Z_NULL;
     defstream.opaque = Z_NULL;
 
-    defstream.avail_in  = (uInt)data.size();
-    defstream.next_in   = (Bytef *)data.c_str(); // input char array
+    defstream.avail_in  = (uInt)dataSize;
+    defstream.next_in   = (Bytef *)data.data(); // input char array
     defstream.avail_out = (uInt)dataSize; // size of output
     defstream.next_out  = (Bytef *)buffer; // output char array
 

@@ -32,6 +32,7 @@ namespace gourou
      *
      * Data handled is first copied in a newly allocated buffer
      * and then shared between all copies until last object is destroyed
+     * (internal reference counter == 0)
      */
     class ByteArray
     {
@@ -39,8 +40,18 @@ namespace gourou
 
 	/**
 	 * @brief Create an empty byte array
+	 *
+	 * @param useMalloc If true, use malloc() instead of new[] for allocation
 	 */
-	ByteArray();
+	ByteArray(bool useMalloc=false);
+
+	/**
+	 * @brief Create an empty byte array of length bytes
+	 *
+	 * @param length  Length of data
+	 * @param useMalloc If true, use malloc() instead of new[] for allocation
+	 */
+	ByteArray(unsigned int length, bool useMalloc=false);
 
 	/**
 	 * @brief Initialize ByteArray with a copy of data
@@ -119,14 +130,36 @@ namespace gourou
 	void append(const std::string& str);
 
 	/**
-	 * @brief Get internal data. Must bot be modified nor freed
+	 * @brief Get internal data. Must bot be freed
 	 */
-	const unsigned char* data() {return _data;}
+	unsigned char* data() {return _data;}
+
+	/**
+	 * @brief Get internal data and increment internal reference counter.
+	 * Must bot be freed
+	 */
+	unsigned char* takeShadowData() {addRef() ; return _data;}
+
+	/**
+	 * @brief Release shadow data. It can now be freed by ByteArray
+	 */
+	void releaseShadowData() {delRef();}
 
 	/**
 	 * @brief Get internal data length
 	 */
-	unsigned int length() {return _length;}
+	unsigned int length() const {return _length;}
+
+	/**
+	 * @brief Get internal data length
+	 */
+	unsigned int size() const {return length();}
+
+	/**
+	 * @brief Create a new internal buffer of length bytes
+	 * All previous data is lost
+	 */
+	void resize(unsigned int length);
 
 	ByteArray& operator=(const ByteArray& other);
 	
@@ -134,10 +167,11 @@ namespace gourou
 	void initData(const unsigned char* data, unsigned int length);
 	void addRef();
 	void delRef();
-	
-	const unsigned char* _data;
+
+	bool _useMalloc;
+	unsigned char* _data;
 	unsigned int _length;
-	static std::map<const unsigned char*, int> refCounter;
+	static std::map<unsigned char*, int> refCounter;
     };
 }
 #endif

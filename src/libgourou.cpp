@@ -597,7 +597,7 @@ namespace gourou
 
 	GOUROU_LOG(INFO, "Download into " << path);
 
-	std::string rightsStr = item->getRights();
+	ByteArray rightsStr(item->getRights());
 
 	if (item->getMetadata("format").find("application/pdf") != std::string::npos)
 	    res = PDF;
@@ -925,4 +925,80 @@ namespace gourou
 
     int DRMProcessor::getLogLevel() {return (int)gourou::logLevel;}
     void DRMProcessor::setLogLevel(int logLevel) {gourou::logLevel = (GOUROU_LOG_LEVEL)logLevel;}
+
+    void DRMProcessor::removeEPubDRM(const std::string& ePubFile)
+    {
+	ByteArray zipData;
+	void* zipHandler = client->zipOpen(ePubFile);
+
+	client->zipReadFile(zipHandler, "META-INF/rights.xml", zipData);
+	pugi::xml_document rightsDoc;
+	rightsDoc.load_string((const char*)zipData.data());
+
+	std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
+	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
+	unsigned char decryptedKey[RSA_KEY_SIZE];
+
+	std::string privateKeyData = user->getPrivateLicenseKey();
+	ByteArray privateRSAKey = ByteArray::fromBase64(privateKeyData);
+
+	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
+	std::string pkcs12 = user->getPKCS12();
+	
+	client->RSAPrivateDecrypt(privateRSAKey.data(), privateRSAKey.length(),
+				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
+				  arrayEncryptedKey.data(), arrayEncryptedKey.length(), decryptedKey);
+
+	if (decryptedKey[0] != 0x00 || decryptedKey[1] != 0x02 ||
+	    decryptedKey[RSA_KEY_SIZE-16-1] != 0x00)
+	    EXCEPTION(CLIENT_DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
+	    
+	client->zipReadFile(zipHandler, "META-INF/encryption.xml", zipData);
+	pugi::xml_document encryptionDoc;
+	encryptionDoc.load_string((const char*)zipData.data());
+
+	pugi::xpath_node_set nodeSet = encryptionDoc.select_nodes("//CipherReference");
+
+	for (pugi::xpath_node_set::const_iterator it = nodeSet.begin();
+	     it != nodeSet.end(); ++it)
+	{
+	    std::string encryptedFile = it->node().attribute("URI").value();
+
+	    GOUROU_LOG(DEBUG, "Encrypted file " << encryptedFile);
+
+	    client->zipReadFile(zipHandler, encryptedFile, zipData, false);
+	    
+	    unsigned char* _data = zipData.data();
+	    ByteArray clearData(zipData.length()-16+1); /* Reserve 1 byte for 'Z' */
+	    unsigned char* _clearData = clearData.data();
+	    gourou::ByteArray inflateData(true);
+	    unsigned int dataOutLength;
+
+	    client->AESDecrypt(CryptoInterface::CHAIN_CBC,
+			       decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
+			       _data, 16, /* IV */
+			       &_data[16], zipData.length()-16,
+			       _clearData, &dataOutLength);
+
+	    // Add 'Z' at the end, done in ineptepub.py
+	    _clearData[dataOutLength] = 'Z';
+
+	    client->inflate(clearData, inflateData);
+
+	    client->zipWriteFile(zipHandler, encryptedFile, inflateData);
+	}
+	
+	client->zipDeleteFile(zipHandler, "META-INF/rights.xml");
+	client->zipDeleteFile(zipHandler, "META-INF/encryption.xml");
+	
+	client->zipClose(zipHandler);
+    }
+    
+    void DRMProcessor::removeDRM(const std::string& ePubFile, ITEM_TYPE type)
+    {
+	if (type == EPUB)
+	    removeEPubDRM(ePubFile);
+	else
+	    EXCEPTION(CLIENT_DRM_FORMAT_NOT_SUPPORTED, "Can't remove DRM in PDF");
+    }
 }

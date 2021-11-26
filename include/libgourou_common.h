@@ -112,6 +112,11 @@ namespace gourou
 	CLIENT_NETWORK_ERROR,
     };
 
+    enum DRM_REMOVAL_ERROR {
+	CLIENT_DRM_ERR_ENCRYPTION_KEY = 0x6000,
+	CLIENT_DRM_FORMAT_NOT_SUPPORTED,
+    };
+
     /**
      * Generic exception class
      */
