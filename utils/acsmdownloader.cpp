@@ -105,6 +105,11 @@ public:
 		    filename = item->getMetadata("title");
 		    if (filename == "")
 			filename = "output";
+		    else
+		    {
+			// Remove invalid characters
+			std::replace(filename.begin(), filename.end(), '/', '_');
+		    }
 		}
 		else
 		    filename = outputFile;
