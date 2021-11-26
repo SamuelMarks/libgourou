@@ -599,9 +599,13 @@ namespace gourou
 
 	std::string rightsStr = item->getRights();
 
-	if (headers.count("Content-Type") && headers["Content-Type"] == "application/pdf")
+	if (item->getMetadata("format").find("application/pdf") != std::string::npos)
 	    res = PDF;
 
+	if (headers.count("Content-Type") &&
+	    headers["Content-Type"].find("application/pdf") != std::string::npos)
+	    res = PDF;
+	    
 	if (res == EPUB)
 	{
 	    void* handler = client->zipOpen(path);
