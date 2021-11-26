@@ -24,9 +24,11 @@
 namespace gourou
 {
     FulfillmentItem::FulfillmentItem(pugi::xml_document& doc, User* user)
+	: fulfillDoc()
     {
-	metadatas = doc.select_node("//metadata").node();
-
+	fulfillDoc.reset(doc); /* We must keep a copy */
+	metadatas = fulfillDoc.select_node("//metadata").node();
+	
 	if (!metadatas)
 	    EXCEPTION(FFI_INVALID_FULFILLMENT_DATA, "No metadata tag in document");
 	
@@ -49,7 +51,7 @@ namespace gourou
 	
 	buildRights(licenseToken, user);
     }
-
+   
     void FulfillmentItem::buildRights(const pugi::xml_node& licenseToken, User* user)
     {
 	pugi::xml_node decl = rights.append_child(pugi::node_declaration);

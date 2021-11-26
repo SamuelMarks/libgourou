@@ -34,6 +34,12 @@ namespace gourou
     class FulfillmentItem
     {
     public:
+	/**
+	 * @brief Main constructor. Not to be called by user
+	 *
+	 * @param doc   Fulfill reply
+	 * @param user  User pointer
+	 */
 	FulfillmentItem(pugi::xml_document& doc, User* user);
 
 	/**
@@ -59,6 +65,7 @@ namespace gourou
 	std::string getResource();
 
     private:
+	pugi::xml_document fulfillDoc;
 	pugi::xml_node metadatas;
 	pugi::xml_document rights;
 	std::string downloadURL;
