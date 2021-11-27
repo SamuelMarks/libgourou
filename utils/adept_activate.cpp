@@ -152,7 +152,7 @@ static void usage(const char* cmd)
     std::cout << "  " << "-H|--hobbes-version" << "\t"<< "Force RMSDK version to a specific value (default: version of current librmsdk)" << std::endl;
     std::cout << "  " << "-r|--random-serial" << "\t"<< "Generate a random device serial (if not set, it will be dependent of your current configuration)" << std::endl;
     std::cout << "  " << "-v|--verbose"    << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
-    std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
+    std::cout << "  " << "-V|--version"    << "\t\t" << "Display libgourou version" << std::endl;
     std::cout << "  " << "-h|--help"       << "\t\t" << "This help" << std::endl;
 
     std::cout << std::endl;
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 	    {"hobbes-version",required_argument, 0,  'H' },
 	    {"random-serial", no_argument,       0,  'r' },
 	    {"verbose",       no_argument,       0,  'v' },
-	    {"version",          no_argument,       0,  'V' },
+	    {"version",       no_argument,       0,  'V' },
 	    {"help",          no_argument,       0,  'h' },
 	    {0,               0,                 0,  0 }
 	};
