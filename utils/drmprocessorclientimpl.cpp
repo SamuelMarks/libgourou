@@ -441,11 +441,15 @@ void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result
 
     int ret = inflateInit2(&infstream, wbits);
 
+    if (ret != Z_OK)
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, infstream.msg);
+
     ret = ::inflate(&infstream, Z_SYNC_FLUSH);
     while (ret == Z_OK || ret == Z_STREAM_END)
     {
 	result.append(buffer, dataSize-infstream.avail_out);
-	if (ret == Z_STREAM_END) break;
+	if ((ret == Z_OK && infstream.avail_out != 0) || ret == Z_STREAM_END)
+	    break;
 	infstream.avail_out = (uInt)dataSize; // size of output
 	infstream.next_out = (Bytef *)buffer; // output char array
 	ret = ::inflate(&infstream, Z_SYNC_FLUSH);
@@ -455,7 +459,7 @@ void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result
 
     delete[] buffer;
 
-    if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
+    if (ret != Z_OK && ret != Z_STREAM_END)
 	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
 }
 	
@@ -479,11 +483,15 @@ void DRMProcessorClientImpl::deflate(std::string data, gourou::ByteArray& result
     int ret = deflateInit2(&defstream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits,
 			   compressionLevel, Z_DEFAULT_STRATEGY);
 
+    if (ret != Z_OK)
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, defstream.msg);
+
     ret = ::deflate(&defstream, Z_SYNC_FLUSH);
     while (ret == Z_OK || ret == Z_STREAM_END)
     {
 	result.append(buffer, dataSize-defstream.avail_out);
-	if (ret == Z_STREAM_END) break;
+	if ((ret == Z_OK && defstream.avail_out != 0) || ret == Z_STREAM_END)
+	    break;
 	defstream.avail_out = (uInt)dataSize; // size of output
 	defstream.next_out = (Bytef *)buffer; // output char array
 	ret = ::deflate(&defstream, Z_SYNC_FLUSH);
@@ -493,6 +501,6 @@ void DRMProcessorClientImpl::deflate(std::string data, gourou::ByteArray& result
 
     delete[] buffer;
 
-    if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
+    if (ret != Z_OK && ret != Z_STREAM_END)
 	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
 }
