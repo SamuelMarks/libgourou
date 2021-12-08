@@ -456,7 +456,7 @@ void DRMProcessorClientImpl::inflate(std::string data, gourou::ByteArray& result
     }
 
     if (ret == Z_STREAM_END)
-	ret = deflateEnd(&infstream);
+	ret = inflateEnd(&infstream);
 
     delete[] buffer;
 
