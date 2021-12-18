@@ -41,12 +41,10 @@ To export your private key :
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./acsmdownloader --export-private-key [-o adobekey_1.der]
 
+To remove ADEPT DRM :
 
-Sources
--------
-
-http://indefero.soutade.fr/p/libgourou
-
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+    ./adept_remove -f <encryptedFile>
 
 
 Copyright
@@ -69,4 +67,3 @@ Special thanks
 --------------
 
   * _Jens_ for all test samples and utils testing
-  

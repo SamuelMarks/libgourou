@@ -15,6 +15,7 @@ Main fucntions to use from gourou::DRMProcessor are :
   * Get an ePub from an ACSM file : _fulfill()_ and _download()_
   * Create a new device : _createDRMProcessor()_
   * Register a new device : _signIn()_ and _activateDevice()_
+  * Remove DRM : _removeDRM()_
 
 
 You can import configuration from (at least) :
@@ -26,7 +27,7 @@ Or create a new one. Be careful : there is a limited number of devices that can 
 
 ePub are encrypted using a shared key : one account / multiple devices, so you can create and register a device into your computer and read downloaded (and encrypted) ePub file with your eReader configured using the same AdobeID account.
 
-For those who wants to remove DRM, you can export your private key and import it within [Calibre](https://calibre-ebook.com/) an its DeDRM plugin.
+For those who wants to remove DRM without adept_remove, you can export your private key and import it within [Calibre](https://calibre-ebook.com/) an its DeDRM plugin.
 
 
 Dependencies
@@ -65,6 +66,7 @@ BUILD_SHARED build libgourou.so if 1, nothing if 0, can be combined with BUILD_S
 
 * Default value
 
+
 Utils
 -----
 
@@ -84,6 +86,11 @@ To export your private key :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./utils/acsmdownloader --export-private-key [-o adobekey_1.der]
+
+To remove ADEPT DRM :
+
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+    ./utils/adept_remove -f <encryptedFile>
 
 
 Copyright

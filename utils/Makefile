@@ -1,5 +1,5 @@
 
-TARGETS=acsmdownloader adept_activate
+TARGETS=acsmdownloader adept_activate adept_remove
 
 CXXFLAGS=-Wall `pkg-config --cflags Qt5Core Qt5Network` -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
 
@@ -18,12 +18,17 @@ else
 CXXFLAGS += -O2
 endif
 
+COMMON_DEPS = drmprocessorclientimpl.cpp $(STATIC_DEP)
+
 all: $(TARGETS)
 
-acsmdownloader: drmprocessorclientimpl.cpp acsmdownloader.cpp $(STATIC_DEP)
+acsmdownloader: acsmdownloader.cpp $(COMMON_DEPS)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-adept_activate: drmprocessorclientimpl.cpp adept_activate.cpp $(STATIC_DEP) 
+adept_activate: adept_activate.cpp $(COMMON_DEPS)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+adept_remove: adept_remove.cpp $(COMMON_DEPS)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
