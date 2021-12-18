@@ -35,7 +35,6 @@
 #define ASN_TEXT        0x04
 #define ASN_ATTRIBUTE   0x05
 
-
 namespace gourou
 {
     GOUROU_LOG_LEVEL logLevel = WARN;
@@ -851,10 +850,10 @@ namespace gourou
 	// Generate IV in front
 	client->randBytes(encrypted_data, 16);
 	    
-	client->AESEncrypt(CryptoInterface::CHAIN_CBC,
-			   deviceKey, 16, encrypted_data, 16,
-			   data, len,
-			   encrypted_data+16, &outLen);
+	client->Encrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+			deviceKey, 16, encrypted_data, 16,
+			data, len,
+			encrypted_data+16, &outLen);
 
 	ByteArray res(encrypted_data, outLen+16);
 
@@ -870,10 +869,10 @@ namespace gourou
 	const unsigned char* deviceKey = device->getDeviceKey();
 	unsigned char* decrypted_data = new unsigned char[len-16];
 
-	client->AESDecrypt(CryptoInterface::CHAIN_CBC,
-			   deviceKey, 16, data, 16,
-			   data+16, len-16,
-			   decrypted_data, &outLen);
+	client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+			deviceKey, 16, data, 16,
+			data+16, len-16,
+			decrypted_data, &outLen);
 
 	ByteArray res(decrypted_data, outLen);
 
@@ -926,18 +925,9 @@ namespace gourou
     int DRMProcessor::getLogLevel() {return (int)gourou::logLevel;}
     void DRMProcessor::setLogLevel(int logLevel) {gourou::logLevel = (GOUROU_LOG_LEVEL)logLevel;}
 
-    void DRMProcessor::removeEPubDRM(const std::string& ePubFile)
+    void DRMProcessor::decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey)
     {
-	ByteArray zipData;
-	void* zipHandler = client->zipOpen(ePubFile);
-
-	client->zipReadFile(zipHandler, "META-INF/rights.xml", zipData);
-	pugi::xml_document rightsDoc;
-	rightsDoc.load_string((const char*)zipData.data());
-
-	std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
 	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
-	unsigned char decryptedKey[RSA_KEY_SIZE];
 
 	std::string privateKeyData = user->getPrivateLicenseKey();
 	ByteArray privateRSAKey = ByteArray::fromBase64(privateKeyData);
@@ -951,8 +941,24 @@ namespace gourou
 
 	if (decryptedKey[0] != 0x00 || decryptedKey[1] != 0x02 ||
 	    decryptedKey[RSA_KEY_SIZE-16-1] != 0x00)
-	    EXCEPTION(CLIENT_DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
-	    
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
+    }
+
+    
+    void DRMProcessor::removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut)
+    {
+	ByteArray zipData;
+	void* zipHandler = client->zipOpen(filenameOut);
+
+	client->zipReadFile(zipHandler, "META-INF/rights.xml", zipData);
+	pugi::xml_document rightsDoc;
+	rightsDoc.load_string((const char*)zipData.data());
+
+	std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
+	unsigned char decryptedKey[RSA_KEY_SIZE];
+
+	decryptADEPTKey(encryptedKey, decryptedKey);
+	
 	client->zipReadFile(zipHandler, "META-INF/encryption.xml", zipData);
 	pugi::xml_document encryptionDoc;
 	encryptionDoc.load_string((const char*)zipData.data());
@@ -969,18 +975,18 @@ namespace gourou
 	    client->zipReadFile(zipHandler, encryptedFile, zipData, false);
 	    
 	    unsigned char* _data = zipData.data();
-	    ByteArray clearData(zipData.length()-16+1); /* Reserve 1 byte for 'Z' */
+	    ByteArray clearData(zipData.length()-16+1, true); /* Reserve 1 byte for 'Z' */
 	    unsigned char* _clearData = clearData.data();
 	    gourou::ByteArray inflateData(true);
 	    unsigned int dataOutLength;
 
-	    client->AESDecrypt(CryptoInterface::CHAIN_CBC,
-			       decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
-			       _data, 16, /* IV */
-			       &_data[16], zipData.length()-16,
-			       _clearData, &dataOutLength);
+	    client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+			    decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
+			    _data, 16, /* IV */
+			    &_data[16], zipData.length()-16,
+			    _clearData, &dataOutLength);
 
-	    // Add 'Z' at the end, done in ineptepub.py
+	     // Add 'Z' at the end, done in ineptepub.py
 	    _clearData[dataOutLength] = 'Z';
 
 	    client->inflate(clearData, inflateData);
@@ -994,11 +1000,192 @@ namespace gourou
 	client->zipClose(zipHandler);
     }
     
-    void DRMProcessor::removeDRM(const std::string& ePubFile, ITEM_TYPE type)
+    void DRMProcessor::generatePDFObjectKey(int version,
+					    const unsigned char* masterKey, unsigned int masterKeyLength,
+					    int objectId, int objectGenerationNumber,
+					    unsigned char* keyOut)
     {
-	if (type == EPUB)
-	    removeEPubDRM(ePubFile);
+	switch(version)
+	{
+	case 4:
+	    ByteArray toHash(masterKey, masterKeyLength);
+	    uint32_t _objectId = objectId;
+	    uint32_t _objectGenerationNumber = objectGenerationNumber;
+	    toHash.append((const unsigned char*)&_objectId, 3); // Fill 3 bytes
+	    toHash.append((const unsigned char*)&_objectGenerationNumber, 2); // Fill 2 bytes
+
+	    client->digest("md5", toHash.data(), toHash.length(), keyOut);
+	    break;
+	}
+    }
+    
+    void DRMProcessor::removePDFDRM(const std::string& filenameIn, const std::string& filenameOut)
+    {
+	uPDFParser::Parser parser;
+	bool EBXHandlerFound = false;
+
+	if (filenameIn == filenameOut)
+	{
+	    EXCEPTION(DRM_IN_OUT_EQUALS, "PDF IN must be different of PDF OUT");		    
+	}
+	
+	try
+	{
+	    GOUROU_LOG(DEBUG, "Parse PDF");
+	    parser.parse(filenameIn);
+	}
+	catch(std::invalid_argument& e)
+	{
+	    GOUROU_LOG(ERROR, "Invalid PDF");
+	    return;
+	}
+
+	uPDFParser::Integer* ebxVersion;
+	std::vector<uPDFParser::Object*> objects = parser.objects();
+	std::vector<uPDFParser::Object*>::reverse_iterator it;
+	unsigned char decryptedKey[RSA_KEY_SIZE];
+
+	for(it = objects.rbegin(); it != objects.rend(); it++)
+	{
+	    // Update EBX_HANDLER with rights
+	    if ((*it)->hasKey("Filter") && (**it)["Filter"]->str() == "/EBX_HANDLER")
+	    {
+		EBXHandlerFound = true;
+		uPDFParser::Object* ebx = *it;
+
+		ebxVersion  = (uPDFParser::Integer*)(*ebx)["V"];
+		if (ebxVersion->value() != 4)
+		{
+		    EXCEPTION(DRM_VERSION_NOT_SUPPORTED, "EBX encryption version not supported " << ebxVersion->value());		    
+		}
+
+		if (!(ebx->hasKey("ADEPT_LICENSE")))
+		{
+		    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "No ADEPT_LICENSE found");
+		}
+
+		uPDFParser::String* licenseObject = (uPDFParser::String*)(*ebx)["ADEPT_LICENSE"];
+
+		ByteArray zippedData = ByteArray::fromBase64(licenseObject->value());
+		ByteArray rightsStr;
+		client->inflate(zippedData, rightsStr);
+
+		pugi::xml_document rightsDoc;
+		rightsDoc.load_string((const char*)rightsStr.data());
+
+		std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
+
+		decryptADEPTKey(encryptedKey, decryptedKey);
+		break;
+	    }
+	}
+
+	if (!EBXHandlerFound)
+	{
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "EBX_HANDLER not found");
+	}
+
+	std::vector<uPDFParser::XRefValue> xrefTable = parser.xrefTable();
+	std::vector<uPDFParser::XRefValue>::iterator xrefIt;
+	
+	for(xrefIt = xrefTable.begin(); xrefIt != xrefTable.end(); xrefIt++)
+	{
+	    GOUROU_LOG(DEBUG, "XREF obj " << (*xrefIt).objectId() << " used " << (*xrefIt).used());
+	    
+	    if (!(*xrefIt).used())
+		continue;
+
+	    uPDFParser::Object* object = (*xrefIt).object();
+
+	    if (!object)
+	    {
+		GOUROU_LOG(DEBUG, "No object");
+		continue;
+	    }
+	    
+	    unsigned char tmpKey[16];
+
+	    generatePDFObjectKey(ebxVersion->value(),
+				 decryptedKey+RSA_KEY_SIZE-16, 16,
+				 object->objectId(), object->generationNumber(),
+				 tmpKey);
+
+	    uPDFParser::Dictionary& dictionary = object->dictionary();
+	    std::map<std::string, uPDFParser::DataType*>& dictValues = dictionary.value();
+	    std::map<std::string, uPDFParser::DataType*>::iterator dictIt;
+	    std::map<std::string, uPDFParser::DataType*> decodedStrings;
+	    std::string string;
+	    
+	    /* Parse dictionary */
+	    for (dictIt = dictValues.begin(); dictIt != dictValues.end(); dictIt++)
+	    {
+		uPDFParser::DataType* dictData = dictIt->second;
+		if (dictData->type() == uPDFParser::DataType::STRING)
+		{
+		    string = ((uPDFParser::String*) dictData)->unescapedValue();
+		    
+		    unsigned char* encryptedData = (unsigned char*)string.c_str();
+		    unsigned int dataLength = string.size();
+		    unsigned char* clearData = new unsigned char[dataLength];
+		    unsigned int dataOutLength;
+
+		    GOUROU_LOG(DEBUG, "Decrypt string " << dictIt->first << " " << dataLength);
+
+		    client->Decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
+				    tmpKey, 16, /* Key */
+				    NULL, 0, /* IV */
+				    encryptedData, dataLength,
+				    clearData, &dataOutLength);
+
+		    decodedStrings[dictIt->first] = new uPDFParser::String(
+			std::string((const char*)clearData, dataOutLength));
+
+		    delete[] clearData;
+		}
+	    }
+		
+	    for (dictIt = decodedStrings.begin(); dictIt != decodedStrings.end(); dictIt++)
+		dictionary.replace(dictIt->first, dictIt->second);
+	    
+	    std::vector<uPDFParser::DataType*>::iterator datasIt;
+	    std::vector<uPDFParser::DataType*>& datas = (*xrefIt).object()->data();
+	    uPDFParser::Stream* stream;
+	    
+	    for (datasIt = datas.begin(); datasIt != datas.end(); datasIt++)
+	    {
+		if ((*datasIt)->type() != uPDFParser::DataType::STREAM)
+		    continue;
+
+		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId());
+
+		stream = (uPDFParser::Stream*) (*datasIt);
+		unsigned char* encryptedData = stream->data();
+		unsigned int dataLength = stream->dataLength();
+		unsigned char* clearData = new unsigned char[dataLength];
+		unsigned int dataOutLength;
+		
+		client->Decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
+				tmpKey, 16, /* Key */
+				NULL, 0, /* IV */
+				encryptedData, dataLength,
+				clearData, &dataOutLength);
+		
+		stream->setData(clearData, dataOutLength, true);
+	    }
+	}
+
+	uPDFParser::Object& trailer = parser.getTrailer();
+	trailer.deleteKey("Encrypt");
+
+	parser.write(filenameOut);
+    }
+    
+    void DRMProcessor::removeDRM(const std::string& filenameIn, const std::string& filenameOut,
+				 ITEM_TYPE type)
+    {
+	if (type == PDF)
+	    removePDFDRM(filenameIn, filenameOut);
 	else
-	    EXCEPTION(CLIENT_DRM_FORMAT_NOT_SUPPORTED, "Can't remove DRM in PDF");
+	    removeEPubDRM(filenameIn, filenameOut);
     }
 }

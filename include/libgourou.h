@@ -164,6 +164,9 @@ namespace gourou
 	 */
 	std::string serializeRSAPrivateKey(void* rsa);
 
+	/**
+	 * @brief Export clear private license key into path
+	 */
 	void exportPrivateLicenseKey(std::string path);
 	
 	/**
@@ -181,7 +184,11 @@ namespace gourou
 	 */
 	DRMProcessorClient* getClient() { return client; }
 		
-	void removeDRM(const std::string& ePubFile, ITEM_TYPE type);
+	/**
+	 * @brief Remove ADEPT DRM.
+	 * Warning: for PDF format, filenameIn must be different than filenameOut
+	 */
+	void removeDRM(const std::string& filenameIn, const std::string& filenameOut, ITEM_TYPE type);
 	
     private:
 	gourou::DRMProcessorClient* client;
@@ -206,7 +213,13 @@ namespace gourou
 	void buildSignInRequest(pugi::xml_document& signInRequest, const std::string& adobeID, const std::string& adobePassword, const std::string& authenticationCertificate);
 	void fetchLicenseServiceCertificate(const std::string& licenseURL,
 					    const std::string& operatorURL);
-	void removeEPubDRM(const std::string& ePubFile);
+	void decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey);
+	void removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut);
+	void generatePDFObjectKey(int version,
+				  const unsigned char* masterKey, unsigned int masterKeyLength,
+				  int objectId, int objectGenerationNumber,
+				  unsigned char* keyOut);
+	void removePDFDRM(const std::string& filenameIn, const std::string& filenameOut);
     };
 }
 
