@@ -505,10 +505,10 @@ void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray&
     int ret = inflateInit2(&infstream, wbits);
 
     if (ret != Z_OK)
-	EXCEPTION(gourou::CLIENT_ZIP_ERROR, infstream.msg);
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Inflate error, code " << zError(ret) << ", msg " << infstream.msg);
 
     ret = ::inflate(&infstream, Z_FINISH);
-    while (ret == Z_OK || ret == Z_STREAM_END)
+    while (ret == Z_OK || ret == Z_STREAM_END || ret == Z_BUF_ERROR)
     {
 	result.append(buffer, dataSize-infstream.avail_out);
 	if ((ret == Z_OK && infstream.avail_out != 0) || ret == Z_STREAM_END)
@@ -518,13 +518,14 @@ void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray&
 	ret = ::inflate(&infstream, Z_FINISH);
     }
 
+
     if (ret == Z_STREAM_END)
-	ret = deflateEnd(&infstream);
+	ret = inflateEnd(&infstream);
 
     delete[] buffer;
 
     if (ret != Z_OK && ret != Z_STREAM_END)
-	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Inflate error, code " << zError(ret) << ", msg " << infstream.msg);
 }
 	
 void DRMProcessorClientImpl::deflate(gourou::ByteArray& data, gourou::ByteArray& result,
@@ -548,8 +549,8 @@ void DRMProcessorClientImpl::deflate(gourou::ByteArray& data, gourou::ByteArray&
 			   compressionLevel, Z_DEFAULT_STRATEGY);
 
     if (ret != Z_OK)
-	EXCEPTION(gourou::CLIENT_ZIP_ERROR, defstream.msg);
-
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Deflate error, code " << zError(ret) << ", msg " << defstream.msg);
+    
     ret = ::deflate(&defstream, Z_FINISH);
     while (ret == Z_OK || ret == Z_STREAM_END)
     {
@@ -567,5 +568,5 @@ void DRMProcessorClientImpl::deflate(gourou::ByteArray& data, gourou::ByteArray&
     delete[] buffer;
 
     if (ret != Z_OK && ret != Z_STREAM_END)
-	EXCEPTION(gourou::CLIENT_ZIP_ERROR, zError(ret));
+	EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Deflate error, code " << zError(ret) << ", msg " << defstream.msg);
 }
