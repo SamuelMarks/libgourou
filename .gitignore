@@ -5,4 +5,5 @@ lib
 *~
 utils/acsmdownloader
 utils/adept_activate
+utils/adept_remove
 .adept
