@@ -50,7 +50,6 @@ namespace gourou {
 	    deviceFingerprint = gourou::extractTextElem(activationDoc, "//fingerprint", throwOnNull);
 	    authenticationCertificate = gourou::extractTextElem(activationDoc, "//adept:authenticationCertificate", throwOnNull);
 	    privateLicenseKey = gourou::extractTextElem(activationDoc, "//adept:privateLicenseKey", throwOnNull);
-	    username    = gourou::extractTextElem(activationDoc, "//adept:username", throwOnNull);
 
 	    pugi::xpath_node xpath_node = activationDoc.select_node("//adept:username");
 	    if (xpath_node)
@@ -60,7 +59,12 @@ namespace gourou {
 		if (throwOnNull)
 		    EXCEPTION(USER_INVALID_ACTIVATION_FILE, "Invalid activation file");
 	    }
-
+	    
+	    if (loginMethod == "anonymous")
+		username = "anonymous";
+	    else
+		username    = gourou::extractTextElem(activationDoc, "//adept:username", throwOnNull);
+	    
 	    pugi::xpath_node_set nodeSet = activationDoc.select_nodes("//adept:licenseServices/adept:licenseServiceInfo");
 	    for (pugi::xpath_node_set::const_iterator it = nodeSet.begin();
 		 it != nodeSet.end(); ++it)

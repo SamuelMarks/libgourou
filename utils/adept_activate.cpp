@@ -144,8 +144,9 @@ static void usage(const char* cmd)
 {
     std::cout << "Create new device files used by ADEPT DRM" << std::endl;
     
-    std::cout << "Usage: " << cmd << " (-u|--username) username [(-p|--password) password] [(-O|--output-dir) dir] [(-r|--random-serial)] [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
+    std::cout << "Usage: " << cmd << " (-a|--anonymous) | ( (-u|--username) username [(-p|--password) password] ) [(-O|--output-dir) dir] [(-r|--random-serial)] [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
     
+    std::cout << "  " << "-a|--anonymous"  << "\t"   << "Anonymous account, no need for username/password (Use it only with a DRM removal software)" << std::endl;
     std::cout << "  " << "-u|--username"   << "\t\t" << "AdobeID username (ie adobe.com email account)" << std::endl;
     std::cout << "  " << "-p|--password"   << "\t\t" << "AdobeID password (asked if not set via command line) " << std::endl;
     std::cout << "  " << "-O|--output-dir" << "\t"   << "Optional output directory were to put result (default ./.adept). This directory must not already exists" << std::endl;
@@ -174,10 +175,12 @@ int main(int argc, char** argv)
     int c, ret = -1;
     const char* _outputDir = outputDir;
     int verbose = gourou::DRMProcessor::getLogLevel();
+    bool anonymous = false;
     
     while (1) {
 	int option_index = 0;
 	static struct option long_options[] = {
+	    {"anonymous",     no_argument      , 0,  'a' },
 	    {"username",      required_argument, 0,  'u' },
 	    {"password",      required_argument, 0,  'p' },
 	    {"output-dir",    required_argument, 0,  'O' },
@@ -189,12 +192,15 @@ int main(int argc, char** argv)
 	    {0,               0,                 0,  0 }
 	};
 
-	c = getopt_long(argc, argv, "u:p:O:H:rvVh",
+	c = getopt_long(argc, argv, "au:p:O:H:rvVh",
                         long_options, &option_index);
 	if (c == -1)
 	    break;
 
 	switch (c) {
+	case 'a':
+	    anonymous = true;
+	    break;
 	case 'u':
 	    username = optarg;
 	    break;
@@ -227,15 +233,22 @@ int main(int argc, char** argv)
    
     gourou::DRMProcessor::setLogLevel(verbose);
 
-    if (!username)
+    if ((!username && !anonymous) ||
+	(username && anonymous))
     {
 	usage(argv[0]);
 	return -1;
     }
-   
+
+    if (anonymous)
+    {
+	username = "anonymous";
+	password = "";
+    }
+    
     if (!_outputDir || _outputDir[0] == 0)
     {
-	outputDir = abspath(DEFAULT_ADEPT_DIR);
+	outputDir = strdup(abspath(DEFAULT_ADEPT_DIR));
     }
     else
     {
@@ -245,12 +258,34 @@ int main(int argc, char** argv)
 	    QFile file(_outputDir);
 	    // realpath doesn't works if file/dir doesn't exists
 	    if (file.exists())
-		outputDir = realpath(_outputDir, 0);
+		outputDir = strdup(realpath(_outputDir, 0));
 	    else
-		outputDir = abspath(_outputDir);
+		outputDir = strdup(abspath(_outputDir));
 	}
 	else
 	    outputDir = strdup(_outputDir);
+    }
+
+    QCoreApplication app(argc, argv);
+
+    QFile file(outputDir);
+    if (file.exists())
+    {
+	int key;
+	
+	while (true)
+	{
+	    std::cout << "!! Warning !! : " << outputDir << " already exists." << std::endl;
+	    std::cout << "All your data will be overwrite. Would you like to continue ? [y/N] " << std::flush ;
+	    key = getchar();
+	    if (key == 'n' || key == 'N' || key == '\n' || key == '\r')
+		goto end;
+	    if (key == 'y' || key == 'Y')
+		break;
+	    // Clean STDIN buf
+	    while ((key = getchar()) != '\n')
+		;
+	}
     }
 
     if (!password)
@@ -260,14 +295,14 @@ int main(int argc, char** argv)
 	std::string pass = getpass((const char*)prompt, false);
 	password = pass.c_str();
     }
-    
-    QCoreApplication app(argc, argv);
-    
+        
     ADEPTActivate activate(&app);
     QThreadPool::globalInstance()->start(&activate);
 
     ret = app.exec();
 
+end:
+    
     free((void*)outputDir);
     return ret;
 }
