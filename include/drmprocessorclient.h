@@ -35,7 +35,7 @@ namespace gourou
     {
     public:
 	/**
-	 * @brief Create a digest handler (for now only SHA1 is used)
+	 * @brief Create a digest handler
 	 *
 	 * @param digestName      Digest name to instanciate
 	 */
@@ -212,14 +212,20 @@ namespace gourou
     class CryptoInterface
     {
     public:
+	enum CRYPTO_ALGO {
+	    ALGO_AES=0,
+	    ALGO_RC4
+	};
+
 	enum CHAINING_MODE {
 	    CHAIN_ECB=0,
 	    CHAIN_CBC
 	};
 	
 	/**
-	 * @brief Do AES encryption. If length of data is not multiple of 16, PKCS#5 padding is done
+	 * @brief Do encryption. If length of data is not multiple of block size, PKCS#5 padding is done
 	 *
+	 * @param algo           Algorithm to use
 	 * @param chaining       Chaining mode
 	 * @param key            AES key
 	 * @param keyLength      AES key length
@@ -230,52 +236,53 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void AESEncrypt(CHAINING_MODE chaining,
-				const unsigned char* key, unsigned int keyLength,
-				const unsigned char* iv, unsigned int ivLength,
-				const unsigned char* dataIn, unsigned int dataInLength,
-				unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			     const unsigned char* key, unsigned int keyLength,
+			     const unsigned char* iv, unsigned int ivLength,
+			     const unsigned char* dataIn, unsigned int dataInLength,
+			     unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
-	 * @brief Init AES CBC encryption
+	 * @brief Init encryption
 	 *
 	 * @param chaining       Chaining mode
-	 * @param key            AES key
-	 * @param keyLength      AES key length
-	 * @param iv             IV key
-	 * @param ivLength       IV key length
+	 * @param key            Key
+	 * @param keyLength      Key length
+	 * @param iv             Optional IV key
+	 * @param ivLength       Optional IV key length
 	 *
 	 * @return AES handler
 	 */
-	virtual void* AESEncryptInit(CHAINING_MODE chaining,
-				     const unsigned char* key, unsigned int keyLength,
-				     const unsigned char* iv=0, unsigned int ivLength=0) = 0;
+	virtual void* EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+				  const unsigned char* key, unsigned int keyLength,
+				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
 
 	/**
 	 * @brief Encrypt data
 	 *
-	 * @param handler        AES handler
+	 * @param handler        Crypto handler
 	 * @param dataIn         Data to encrypt
 	 * @param dataInLength   Data length
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void AESEncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-			 unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
-	 * @brief Finalize AES encryption (pad and encrypt last block if needed)
+	 * @brief Finalizeencryption (pad and encrypt last block if needed)
 	 * Destroy handler at the end
 	 *
-	 * @param handler        AES handler
+	 * @param handler        Crypto handler
 	 * @param dataOut        Last block of encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void AESEncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void EncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
-	 * @brief Do AES decryption. If length of data is not multiple of 16, PKCS#5 padding is done
+	 * @brief Do decryption. If length of data is not multiple of block size, PKCS#5 padding is done
 	 *
+	 * @param algo           Algorithm to use
 	 * @param chaining       Chaining mode
 	 * @param key            AES key
 	 * @param keyLength      AES key length
@@ -286,47 +293,47 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void AESDecrypt(CHAINING_MODE chaining,
-				const unsigned char* key, unsigned int keyLength,
-				const unsigned char* iv, unsigned int ivLength,
-				const unsigned char* dataIn, unsigned int dataInLength,
-				unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			     const unsigned char* key, unsigned int keyLength,
+			     const unsigned char* iv, unsigned int ivLength,
+			     const unsigned char* dataIn, unsigned int dataInLength,
+			     unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
-	 * @brief Init AES decryption
+	 * @brief Init decryption
 	 *
 	 * @param chaining       Chaining mode
-	 * @param key            AES key
-	 * @param keyLength      AES key length
+	 * @param key            Key
+	 * @param keyLength      Key length
 	 * @param iv             IV key
 	 * @param ivLength       IV key length
 	 *
 	 * @return AES handler
 	 */
-	virtual void* AESDecryptInit(CHAINING_MODE chaining,
-				     const unsigned char* key, unsigned int keyLength,
-				     const unsigned char* iv=0, unsigned int ivLength=0) = 0;
+	virtual void* DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+				  const unsigned char* key, unsigned int keyLength,
+				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
 
 	/**
 	 * @brief Decrypt data
 	 *
-	 * @param handler        AES handler
+	 * @param handler        Crypto handler
 	 * @param dataIn         Data to decrypt
 	 * @param dataInLength   Data length
 	 * @param dataOut        Decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void AESDecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-				 unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 	/**
-	 * @brief Finalize AES decryption (decrypt last block and remove padding if it is set).
+	 * @brief Finalize decryption (decrypt last block and remove padding if it is set).
 	 * Destroy handler at the end
 	 *
-	 * @param handler        AES handler
+	 * @param handler        Crypto handler
 	 * @param dataOut        Last block decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void AESDecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
     };
 
 

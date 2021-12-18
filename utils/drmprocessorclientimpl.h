@@ -73,34 +73,34 @@ public:
 				    unsigned char** certOut, unsigned int* certOutLength);
 				 
     /* Crypto interface */
-    virtual void AESEncrypt(CHAINING_MODE chaining,
-			    const unsigned char* key, unsigned int keyLength,
-			    const unsigned char* iv, unsigned int ivLength,
-			    const unsigned char* dataIn, unsigned int dataInLength,
-			    unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			 const unsigned char* key, unsigned int keyLength,
+			 const unsigned char* iv, unsigned int ivLength,
+			 const unsigned char* dataIn, unsigned int dataInLength,
+			 unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void* AESEncryptInit(CHAINING_MODE chaining,
-				 const unsigned char* key, unsigned int keyLength,
-				 const unsigned char* iv=0, unsigned int ivLength=0);
+    virtual void* EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			      const unsigned char* key, unsigned int keyLength,
+			      const unsigned char* iv=0, unsigned int ivLength=0);
 
 
-    virtual void AESEncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+    virtual void EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 				   unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void AESEncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void EncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void AESDecrypt(CHAINING_MODE chaining,
-			    const unsigned char* key, unsigned int keyLength,
-			    const unsigned char* iv, unsigned int ivLength,
-			    const unsigned char* dataIn, unsigned int dataInLength,
-			    unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			 const unsigned char* key, unsigned int keyLength,
+			 const unsigned char* iv, unsigned int ivLength,
+			 const unsigned char* dataIn, unsigned int dataInLength,
+			 unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void* AESDecryptInit(CHAINING_MODE chaining,
-				 const unsigned char* key, unsigned int keyLength,
-				 const unsigned char* iv=0, unsigned int ivLength=0);
+    virtual void* DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+			      const unsigned char* key, unsigned int keyLength,
+			      const unsigned char* iv=0, unsigned int ivLength=0);
 
-    virtual void AESDecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-				   unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void AESDecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+			       unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
 
     /* ZIP Interface */
     virtual void* zipOpen(const std::string& path);

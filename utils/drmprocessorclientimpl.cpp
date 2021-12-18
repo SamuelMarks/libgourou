@@ -47,23 +47,28 @@
 /* Digest interface */
 void* DRMProcessorClientImpl::createDigest(const std::string& digestName)
 {
-    EVP_MD_CTX *sha_ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     const EVP_MD* md = EVP_get_digestbyname(digestName.c_str());
-    EVP_DigestInit(sha_ctx, md);
 
-    return sha_ctx;
+    if (EVP_DigestInit(md_ctx, md) != 1)
+    {
+	EVP_MD_CTX_free(md_ctx);
+	return 0;
+    }
+
+    return md_ctx;
 }
 
 int DRMProcessorClientImpl::digestUpdate(void* handler, unsigned char* data, unsigned int length)
 {
-    return EVP_DigestUpdate((EVP_MD_CTX *)handler, data, length);
+    return (EVP_DigestUpdate((EVP_MD_CTX *)handler, data, length)) ? 0 : -1;
 }
 
 int DRMProcessorClientImpl::digestFinalize(void* handler, unsigned char* digestOut)
 {
     int res = EVP_DigestFinal((EVP_MD_CTX *)handler, digestOut, NULL);
     EVP_MD_CTX_free((EVP_MD_CTX *)handler);
-    return res;
+    return (res == 1) ? 0 : -1;
 }
 
 int DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut)
@@ -283,83 +288,106 @@ void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, uns
 }
 
 /* Crypto interface */
-void DRMProcessorClientImpl::AESEncrypt(CHAINING_MODE chaining,
-					const unsigned char* key, unsigned int keyLength,
-					const unsigned char* iv, unsigned int ivLength,
-					const unsigned char* dataIn, unsigned int dataInLength,
-					unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+				     const unsigned char* key, unsigned int keyLength,
+				     const unsigned char* iv, unsigned int ivLength,
+				     const unsigned char* dataIn, unsigned int dataInLength,
+				     unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    void* handler = AESEncryptInit(chaining, key, keyLength, iv, ivLength);
-    AESEncryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
-    AESEncryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
+    void* handler = EncryptInit(algo, chaining, key, keyLength, iv, ivLength);
+    EncryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
+    EncryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
 }
 
-void* DRMProcessorClientImpl::AESEncryptInit(CHAINING_MODE chaining,
+void* DRMProcessorClientImpl::EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+					  const unsigned char* key, unsigned int keyLength,
+					  const unsigned char* iv, unsigned int ivLength)
+{
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+
+    if (algo == ALGO_AES)
+    {
+	switch(keyLength)
+	{
+	case 16:
+	    switch(chaining)
+	    {
+	    case CHAIN_ECB:
+		EVP_EncryptInit(ctx, EVP_aes_128_ecb(), key, iv);
+		break;
+	    case CHAIN_CBC:
+		EVP_EncryptInit(ctx, EVP_aes_128_cbc(), key, iv);
+		break;
+	    default:
+		EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
+	    }
+	    break;
+	default:
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
+	}
+    }
+    else if (algo == ALGO_RC4)
+    {
+	if (keyLength != 16)
+	{
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
+	}
+	EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+    }
+    return ctx;
+}
+
+void* DRMProcessorClientImpl::DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 					     const unsigned char* key, unsigned int keyLength,
 					     const unsigned char* iv, unsigned int ivLength)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
-    switch(keyLength)
+    if (algo == ALGO_AES)
     {
-    case 16:
-	switch(chaining)
+	switch(keyLength)
 	{
-	case CHAIN_ECB:
-	    EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, iv);
-	    break;
-	case CHAIN_CBC:
-	    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv);
+	case 16:
+	    switch(chaining)
+	    {
+	    case CHAIN_ECB:
+		EVP_DecryptInit(ctx, EVP_aes_128_ecb(), key, iv);
+		break;
+	    case CHAIN_CBC:
+		EVP_DecryptInit(ctx, EVP_aes_128_cbc(), key, iv);
+		break;
+	    default:
+		EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
+	    }
 	    break;
 	default:
-	    EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
 	}
-	break;
-    default:
-	EVP_CIPHER_CTX_free(ctx);
-	EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
     }
-
+    else if (algo == ALGO_RC4)
+    {
+	if (keyLength != 16)
+	{
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
+	}
+	EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+    }
+    
     return ctx;
 }
 
-void* DRMProcessorClientImpl::AESDecryptInit(CHAINING_MODE chaining,
-					     const unsigned char* key, unsigned int keyLength,
-					     const unsigned char* iv, unsigned int ivLength)
-{
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-
-    switch(keyLength)
-    {
-    case 16:
-	switch(chaining)
-	{
-	case CHAIN_ECB:
-	    EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, iv);
-	    break;
-	case CHAIN_CBC:
-	    EVP_DecryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv);
-	    break;
-	default:
-	    EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
-	}
-	break;
-    default:
-	EVP_CIPHER_CTX_free(ctx);
-	EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
-    }
-
-    return ctx;
-}
-
-void DRMProcessorClientImpl::AESEncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-		 unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+					   unsigned char* dataOut, unsigned int* dataOutLength)
 {
     EVP_EncryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
 }
 
-void DRMProcessorClientImpl::AESEncryptFinalize(void* handler,
-						unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::EncryptFinalize(void* handler,
+					     unsigned char* dataOut, unsigned int* dataOutLength)
 {
     int len;
     EVP_EncryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
@@ -367,24 +395,24 @@ void DRMProcessorClientImpl::AESEncryptFinalize(void* handler,
     EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)handler);
 }
 
-void DRMProcessorClientImpl::AESDecrypt(CHAINING_MODE chaining,
-					const unsigned char* key, unsigned int keyLength,
-					const unsigned char* iv, unsigned int ivLength,
-					const unsigned char* dataIn, unsigned int dataInLength,
-					unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+				     const unsigned char* key, unsigned int keyLength,
+				     const unsigned char* iv, unsigned int ivLength,
+				     const unsigned char* dataIn, unsigned int dataInLength,
+				     unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    void* handler = AESDecryptInit(chaining, key, keyLength, iv, ivLength);
-    AESDecryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
-    AESDecryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
+    void* handler = DecryptInit(algo, chaining, key, keyLength, iv, ivLength);
+    DecryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
+    DecryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
 }
 
-void DRMProcessorClientImpl::AESDecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-					       unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+					   unsigned char* dataOut, unsigned int* dataOutLength)
 {
     EVP_DecryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
 }
 
-void DRMProcessorClientImpl::AESDecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength)
 {
     int len;
     EVP_DecryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
