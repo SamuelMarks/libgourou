@@ -948,6 +948,7 @@ namespace gourou
     void DRMProcessor::removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut)
     {
 	ByteArray zipData;
+	bool removeEncryptionXML = true;
 	void* zipHandler = client->zipOpen(filenameOut);
 
 	client->zipReadFile(zipHandler, "META-INF/rights.xml", zipData);
@@ -963,39 +964,72 @@ namespace gourou
 	pugi::xml_document encryptionDoc;
 	encryptionDoc.load_string((const char*)zipData.data());
 
-	pugi::xpath_node_set nodeSet = encryptionDoc.select_nodes("//CipherReference");
+	pugi::xpath_node_set nodeSet = encryptionDoc.select_nodes("//EncryptedData");
 
 	for (pugi::xpath_node_set::const_iterator it = nodeSet.begin();
 	     it != nodeSet.end(); ++it)
 	{
-	    std::string encryptedFile = it->node().attribute("URI").value();
+	    pugi::xml_node encryptionMethod = it->node().child("EncryptionMethod");
+	    pugi::xml_node cipherReference  = it->node().child("CipherData").child("CipherReference");
 
-	    GOUROU_LOG(DEBUG, "Encrypted file " << encryptedFile);
-
-	    client->zipReadFile(zipHandler, encryptedFile, zipData, false);
+	    std::string encryptionType = encryptionMethod.attribute("Algorithm").value();
+	    std::string encryptedFile = cipherReference.attribute("URI").value();
 	    
-	    unsigned char* _data = zipData.data();
-	    ByteArray clearData(zipData.length()-16+1, true); /* Reserve 1 byte for 'Z' */
-	    unsigned char* _clearData = clearData.data();
-	    gourou::ByteArray inflateData(true);
-	    unsigned int dataOutLength;
+	    if (encryptionType == "")
+	    {
+		EXCEPTION(DRM_MISSING_PARAMETER, "Missing Algorithm attribute in encryption.xml");
+	    }
+	    else if (encryptionType == "http://www.w3.org/2001/04/xmlenc#aes128-cbc")
+	    {
+		if (encryptedFile == "")
+		{
+		    EXCEPTION(DRM_MISSING_PARAMETER, "Missing URI attribute in encryption.xml");
+		}
 
-	    client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
-			    decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
-			    _data, 16, /* IV */
-			    &_data[16], zipData.length()-16,
-			    _clearData, &dataOutLength);
+		GOUROU_LOG(DEBUG, "Encrypted file " << encryptedFile);
 
-	     // Add 'Z' at the end, done in ineptepub.py
-	    _clearData[dataOutLength] = 'Z';
+		client->zipReadFile(zipHandler, encryptedFile, zipData, false);
+	    
+		unsigned char* _data = zipData.data();
+		ByteArray clearData(zipData.length()-16+1, true); /* Reserve 1 byte for 'Z' */
+		unsigned char* _clearData = clearData.data();
+		gourou::ByteArray inflateData(true);
+		unsigned int dataOutLength;
 
-	    client->inflate(clearData, inflateData);
+		client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+				decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
+				_data, 16, /* IV */
+				&_data[16], zipData.length()-16,
+				_clearData, &dataOutLength);
 
-	    client->zipWriteFile(zipHandler, encryptedFile, inflateData);
+		// Add 'Z' at the end, done in ineptepub.py
+		_clearData[dataOutLength] = 'Z';
+		clearData.resize(dataOutLength+1);
+
+		client->inflate(clearData, inflateData);
+		
+		client->zipWriteFile(zipHandler, encryptedFile, inflateData);
+
+		it->node().parent().remove_child(it->node());
+	    }
+	    else
+	    {
+		GOUROU_LOG(WARN, "Unsupported encryption algorithm " << encryptionType << ", for file " << encryptedFile);
+		removeEncryptionXML = false;
+	    }
 	}
 	
 	client->zipDeleteFile(zipHandler, "META-INF/rights.xml");
-	client->zipDeleteFile(zipHandler, "META-INF/encryption.xml");
+	if (removeEncryptionXML)
+	    client->zipDeleteFile(zipHandler, "META-INF/encryption.xml");
+	else
+	{
+	    StringXMLWriter xmlWriter;
+	    encryptionDoc.save(xmlWriter, "  ");
+	    std::string xmlStr = xmlWriter.getResult();
+	    ByteArray ba(xmlStr);
+	    client->zipWriteFile(zipHandler, "META-INF/encryption.xml", ba);
+	}
 	
 	client->zipClose(zipHandler);
     }
