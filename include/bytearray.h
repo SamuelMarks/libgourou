@@ -156,10 +156,12 @@ namespace gourou
 	unsigned int size() const {return length();}
 
 	/**
-	 * @brief Create a new internal buffer of length bytes
-	 * All previous data is lost
+	 * @brief Increase or decrease internal buffer
+	 * @param length New length of internal buffer
+	 * @param keepData If true copy old data on new buffer, if false,
+	 * create a new buffer with random data
 	 */
-	void resize(unsigned int length);
+	void resize(unsigned int length, bool keepData=true);
 
 	ByteArray& operator=(const ByteArray& other);
 	
