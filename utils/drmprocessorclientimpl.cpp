@@ -510,14 +510,18 @@ void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray&
     ret = ::inflate(&infstream, Z_FINISH);
     while (ret == Z_OK || ret == Z_STREAM_END || ret == Z_BUF_ERROR)
     {
+	// Real error
+	if (ret == Z_BUF_ERROR && infstream.avail_out == (uInt)dataSize)
+	    EXCEPTION(gourou::CLIENT_ZIP_ERROR, "Inflate error, code " << zError(ret) << ", msg " << infstream.msg);
+
 	result.append(buffer, dataSize-infstream.avail_out);
+	    
 	if ((ret == Z_OK && infstream.avail_out != 0) || ret == Z_STREAM_END)
 	    break;
 	infstream.avail_out = (uInt)dataSize; // size of output
 	infstream.next_out = (Bytef *)buffer; // output char array
 	ret = ::inflate(&infstream, Z_FINISH);
     }
-
 
     if (ret == Z_STREAM_END)
 	ret = inflateEnd(&infstream);

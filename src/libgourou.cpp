@@ -1010,9 +1010,20 @@ namespace gourou
 		_clearData[dataOutLength] = 'Z';
 		clearData.resize(dataOutLength+1);
 
-		client->inflate(clearData, inflateData);
-		
-		client->zipWriteFile(zipHandler, encryptedFile, inflateData);
+		try
+		{
+		    client->inflate(clearData, inflateData);
+		    client->zipWriteFile(zipHandler, encryptedFile, inflateData);
+		}
+		catch(gourou::Exception& e)
+		{
+		    if (e.getErrorCode() == CLIENT_ZIP_ERROR)
+		    {
+			GOUROU_LOG(ERROR, e.what() << std::endl << "Skip file " << encryptedFile);
+		    }
+		    else
+			throw e;
+		}
 
 		it->node().parent().remove_child(it->node());
 	    }
