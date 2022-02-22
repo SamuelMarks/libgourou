@@ -184,7 +184,7 @@ void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsi
     PKCS8_PRIV_KEY_INFO* p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
 
     if (!p8inf)
-	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS8, ERR_error_string(ERR_get_error(), NULL));
 
     EVP_PKEY* pkey = EVP_PKCS82PKEY(p8inf);
     RSA * rsa;
