@@ -282,10 +282,11 @@ int main(int argc, char** argv)
 		goto end;
 	    if (key == 'y' || key == 'Y')
 		break;
-	    // Clean STDIN buf
-	    while ((key = getchar()) != '\n')
-		;
 	}
+
+	// Clean STDIN buf
+	while ((key = getchar()) != '\n')
+	    ;
     }
 
     if (!password)
