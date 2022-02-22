@@ -70,10 +70,10 @@ BUILD_SHARED build libgourou.so if 1, nothing if 0, can be combined with BUILD_S
 Utils
 -----
 
-You can import configuration from your eReader or create a new one with utils/activate :
+You can import configuration from your eReader or create a new one with _utils/adept\_activate_ :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
-    ./utils/activate -u <AdobeID USERNAME>
+    ./utils/adept_activate -u <AdobeID USERNAME>
 
 Then a _./.adept_ directory is created with all configuration file
 
@@ -82,7 +82,7 @@ To download an ePub/PDF :
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./utils/acsmdownloader -f <ACSM_FILE>
 
-To export your private key :
+To export your private key (for DeDRM software) :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./utils/acsmdownloader --export-private-key [-o adobekey_1.der]
@@ -91,6 +91,9 @@ To remove ADEPT DRM :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./utils/adept_remove -f <encryptedFile>
+
+You can get utils full options description with -h or --help switch
+
 
 
 Copyright
@@ -113,3 +116,4 @@ Special thanks
 --------------
 
   * _Jens_ for all test samples and utils testing
+  * _Milian_ for debug & code
