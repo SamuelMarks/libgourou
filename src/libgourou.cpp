@@ -927,8 +927,12 @@ namespace gourou
 
     void DRMProcessor::decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey)
     {
+	if (encryptedKey.size() != 172)
+	    EXCEPTION(DRM_INVALID_KEY_SIZE, "Invalid encrypted key size (" << encryptedKey.size() << "). DRM version not supported");
+	    
 	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
 
+	
 	std::string privateKeyData = user->getPrivateLicenseKey();
 	ByteArray privateRSAKey = ByteArray::fromBase64(privateKeyData);
 
