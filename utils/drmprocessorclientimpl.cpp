@@ -88,6 +88,20 @@ void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned int len
 }
 
 /* HTTP interface */
+#define DISPLAY_THRESHOLD 10*1024 // Threshold to display download progression
+
+static void downloadProgress(qint64 bytesReceived, qint64 bytesTotal) {
+    // For "big" files only
+    if (bytesTotal >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::WARN)
+    {
+	int percent = 0;
+	if (bytesTotal)
+	    percent = (bytesReceived * 100) / bytesTotal;
+
+	std::cout << "\rDownload " << percent << "%" << std::flush;
+    }
+}
+
 std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders)
 {
     QNetworkRequest request(QUrl(URL.c_str()));
@@ -112,11 +126,15 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     else
 	reply = networkManager.get(request);
 
-    QCoreApplication* app = QCoreApplication::instance();
-    networkManager.moveToThread(app->thread());
-    while (!reply->isFinished())
-	app->processEvents();
+    QEventLoop loop;
 
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    // Handled just below
+    QObject::connect(reply, &QNetworkReply::errorOccurred, &loop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::downloadProgress, &loop, downloadProgress);
+
+    loop.exec();
+    
     QByteArray location = reply->rawHeader("Location");
     if (location.size() != 0)
     {
@@ -136,6 +154,8 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     }
     
     replyData = reply->readAll();
+    if (replyData.size() >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::WARN)
+	std::cout << std::endl;
     if (reply->rawHeader("Content-Type") == "application/vnd.adobe.adept+xml")
     {
 	GOUROU_LOG(gourou::DEBUG, ">>> " << std::endl << replyData.data());
