@@ -289,11 +289,12 @@ int main(int argc, char** argv)
 	    ;
     }
 
+    std::string pass;
     if (!password)
     {
 	char prompt[128];
 	std::snprintf(prompt, sizeof(prompt), "Enter password for <%s> : ", username);
-	std::string pass = getpass((const char*)prompt, false);
+	pass = getpass((const char*)prompt, false);
 	password = pass.c_str();
     }
         

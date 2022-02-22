@@ -1205,14 +1205,14 @@ namespace gourou
 		if ((*datasIt)->type() != uPDFParser::DataType::STREAM)
 		    continue;
 
-		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId());
-
 		stream = (uPDFParser::Stream*) (*datasIt);
 		unsigned char* encryptedData = stream->data();
 		unsigned int dataLength = stream->dataLength();
 		unsigned char* clearData = new unsigned char[dataLength];
 		unsigned int dataOutLength;
 		
+		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId() << ", size " << stream->dataLength());
+
 		client->Decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
 				tmpKey, 16, /* Key */
 				NULL, 0, /* IV */
