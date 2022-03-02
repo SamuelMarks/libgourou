@@ -1091,16 +1091,18 @@ namespace gourou
 
 	uPDFParser::Integer* ebxVersion;
 	std::vector<uPDFParser::Object*> objects = parser.objects();
-	std::vector<uPDFParser::Object*>::reverse_iterator it;
+	std::vector<uPDFParser::Object*>::iterator it;
+	std::vector<uPDFParser::Object*>::reverse_iterator rIt;
 	unsigned char decryptedKey[RSA_KEY_SIZE];
-
-	for(it = objects.rbegin(); it != objects.rend(); it++)
+	int ebxId;
+	
+	for(rIt = objects.rbegin(); rIt != objects.rend(); rIt++)
 	{
 	    // Update EBX_HANDLER with rights
-	    if ((*it)->hasKey("Filter") && (**it)["Filter"]->str() == "/EBX_HANDLER")
+	    if ((*rIt)->hasKey("Filter") && (**rIt)["Filter"]->str() == "/EBX_HANDLER")
 	    {
 		EBXHandlerFound = true;
-		uPDFParser::Object* ebx = *it;
+		uPDFParser::Object* ebx = *rIt;
 
 		ebxVersion  = (uPDFParser::Integer*)(*ebx)["V"];
 		if (ebxVersion->value() != 4)
@@ -1114,8 +1116,13 @@ namespace gourou
 		}
 
 		uPDFParser::String* licenseObject = (uPDFParser::String*)(*ebx)["ADEPT_LICENSE"];
+		
+		std::string value = licenseObject->value();
+		ByteArray zippedData = ByteArray::fromBase64(value);
 
-		ByteArray zippedData = ByteArray::fromBase64(licenseObject->value());
+		if (zippedData.size() == 0)
+		    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Invalid ADEPT_LICENSE");
+		    
 		ByteArray rightsStr;
 		client->inflate(zippedData, rightsStr);
 
@@ -1125,6 +1132,8 @@ namespace gourou
 		std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
 
 		decryptADEPTKey(encryptedKey, decryptedKey);
+		ebxId = ebx->objectId();
+
 		break;
 	    }
 	}
@@ -1134,24 +1143,18 @@ namespace gourou
 	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "EBX_HANDLER not found");
 	}
 
-	std::vector<uPDFParser::XRefValue> xrefTable = parser.xrefTable();
-	std::vector<uPDFParser::XRefValue>::iterator xrefIt;
-	
-	for(xrefIt = xrefTable.begin(); xrefIt != xrefTable.end(); xrefIt++)
+	for(it = objects.begin(); it != objects.end(); it++)
 	{
-	    GOUROU_LOG(DEBUG, "XREF obj " << (*xrefIt).objectId() << " used " << (*xrefIt).used());
-	    
-	    if (!(*xrefIt).used())
+	    uPDFParser::Object* object = *it;
+
+	    if (object->objectId() == ebxId)
 		continue;
 
-	    uPDFParser::Object* object = (*xrefIt).object();
-
-	    if (!object)
-	    {
-		GOUROU_LOG(DEBUG, "No object");
+	    if (object->hasKey("Type") && (*object)["Type"]->str() == "/XRef")
 		continue;
-	    }
 	    
+	    GOUROU_LOG(DEBUG, "Obj " << object->objectId());
+
 	    unsigned char tmpKey[16];
 
 	    generatePDFObjectKey(ebxVersion->value(),
@@ -1197,7 +1200,7 @@ namespace gourou
 		dictionary.replace(dictIt->first, dictIt->second);
 	    
 	    std::vector<uPDFParser::DataType*>::iterator datasIt;
-	    std::vector<uPDFParser::DataType*>& datas = (*xrefIt).object()->data();
+	    std::vector<uPDFParser::DataType*>& datas = object->data();
 	    uPDFParser::Stream* stream;
 	    
 	    for (datasIt = datas.begin(); datasIt != datas.end(); datasIt++)
