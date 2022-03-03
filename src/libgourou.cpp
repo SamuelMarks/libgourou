@@ -1118,6 +1118,9 @@ namespace gourou
 		uPDFParser::String* licenseObject = (uPDFParser::String*)(*ebx)["ADEPT_LICENSE"];
 		
 		std::string value = licenseObject->value();
+		// Pad with '='
+		while ((value.size() % 4))
+		    value += "=";
 		ByteArray zippedData = ByteArray::fromBase64(value);
 
 		if (zippedData.size() == 0)
