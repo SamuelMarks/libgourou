@@ -1151,10 +1151,17 @@ namespace gourou
 	    uPDFParser::Object* object = *it;
 
 	    if (object->objectId() == ebxId)
+	    {
+		// object->deleteKey("Filter");
 		continue;
+	    }
 
+	    // Should not decrypt XRef stream
 	    if (object->hasKey("Type") && (*object)["Type"]->str() == "/XRef")
+	    {
+		GOUROU_LOG(DEBUG, "XRef stream at " << object->offset());
 		continue;
+	    }
 	    
 	    GOUROU_LOG(DEBUG, "Obj " << object->objectId());
 
