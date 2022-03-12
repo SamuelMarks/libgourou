@@ -55,6 +55,23 @@ static const char* defaultDirs[]  = {
     "./adobe-digital-editions/",
     "./.adobe-digital-editions/"
 };
+static char* encryptionKeyUser  = 0;
+static unsigned char* encryptionKey  = 0;
+static unsigned       encryptionKeySize  = 0;
+
+static inline unsigned char htoi(unsigned char c)
+{
+    if (c >= '0' && c <= '9')
+	c -= '0';
+    else if (c >= 'a' && c <= 'f')
+	c -= 'a' - 10;
+    else if (c >= 'A' && c <= 'F')
+	c -= 'A' - 10;
+    else
+	EXCEPTION(gourou::USER_INVALID_INPUT, "Invalid character " << c << " in encryption key");
+
+    return c;
+}
 
 static inline bool endsWith(const std::string& s, const std::string& suffix)
 {
@@ -110,7 +127,7 @@ public:
 		{
 		    EXCEPTION(gourou::DRM_FILE_ERROR, "Unable to copy " << inputFile << " into " << filename);
 		}
-		processor.removeDRM(inputFile, filename, type);
+		processor.removeDRM(inputFile, filename, type, encryptionKey, encryptionKeySize);
 		std::cout << "DRM removed into new file " << filename << std::endl;
 	    }
 	    else
@@ -121,7 +138,7 @@ public:
 		    QTemporaryFile tempFile;
 		    tempFile.open();
 		    tempFile.setAutoRemove(false); // In case of failure
-		    processor.removeDRM(inputFile, tempFile.fileName().toStdString(), type);
+		    processor.removeDRM(inputFile, tempFile.fileName().toStdString(), type, encryptionKey, encryptionKeySize);
 		    /* Original file must be removed before doing a copy... */
 		    QFile origFile(inputFile);
 		    origFile.remove();
@@ -132,7 +149,7 @@ public:
 		    tempFile.setAutoRemove(true);
 		}
 		else
-		    processor.removeDRM(inputFile, filename, type);
+		    processor.removeDRM(inputFile, filename, type, encryptionKey, encryptionKeySize);
 		std::cout << "DRM removed from " << filename << std::endl;
 	    }
 	} catch(std::exception& e)
@@ -213,14 +230,14 @@ int main(int argc, char** argv)
 	    {"output-dir",       required_argument, 0,  'O' },
 	    {"output-file",      required_argument, 0,  'o' },
 	    {"input-file",       required_argument, 0,  'f' },
-	    {"export-private-key",no_argument,      0,  'e' },
+	    {"encryption-key",   required_argument, 0,  'K' }, // Private option
 	    {"verbose",          no_argument,       0,  'v' },
 	    {"version",          no_argument,       0,  'V' },
 	    {"help",             no_argument,       0,  'h' },
 	    {0,                  0,                 0,  0 }
 	};
 
-	c = getopt_long(argc, argv, "d:a:k:O:o:f:evVh",
+	c = getopt_long(argc, argv, "d:a:k:O:o:f:K:vVh",
                         long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -243,6 +260,9 @@ int main(int argc, char** argv)
 	    break;
 	case 'o':
 	    outputFile = optarg;
+	    break;
+	case 'K':
+	    encryptionKeyUser = optarg;
 	    break;
 	case 'v':
 	    verbose++;
@@ -286,6 +306,32 @@ int main(int argc, char** argv)
 	}
     }
 
+    if (encryptionKeyUser)
+    {
+	int size = std::string(encryptionKeyUser).size();
+	if ((size % 2))
+	{
+	    std::cout << "Error : Encryption key must be odd length" << std::endl;
+	    goto end;
+	}
+
+	if (encryptionKeyUser[0] == '0' && encryptionKeyUser[1] == 'x')
+	{
+	    encryptionKeyUser += 2;
+	    size -= 2;
+	}
+
+	encryptionKey = new unsigned char[size/2];
+
+	for(i=0; i<size; i+=2)
+	{
+	    encryptionKey[i/2]  = htoi(encryptionKeyUser[i]) << 4;
+	    encryptionKey[i/2] |= htoi(encryptionKeyUser[i+1]);
+	}
+
+	encryptionKeySize = size/2;
+    }
+    
     if (hasErrors)
 	goto end;
        
@@ -300,5 +346,8 @@ end:
 	    free((void*)*files[i]);
     }
 
+    if (encryptionKey)
+	free(encryptionKey);
+    
     return ret;
 }

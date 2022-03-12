@@ -185,10 +185,16 @@ namespace gourou
 	DRMProcessorClient* getClient() { return client; }
 		
 	/**
-	 * @brief Remove ADEPT DRM.
+	 * @brief Remove ADEPT DRM
 	 * Warning: for PDF format, filenameIn must be different than filenameOut
+	 *
+	 * @param filenameIn         Input file (with ADEPT DRM)
+	 * @param filenameOut        Output file (without ADEPT DRM)
+	 * @param type               Type of file (ePub or PDF)
+	 * @param encryptionKey      Optional encryption key, do not try to decrypt the one inside input file
+	 * @param encryptionKeySize  Size of encryption key (if provided)
 	 */
-	void removeDRM(const std::string& filenameIn, const std::string& filenameOut, ITEM_TYPE type);
+	void removeDRM(const std::string& filenameIn, const std::string& filenameOut, ITEM_TYPE type, const unsigned char* encryptionKey=0, unsigned encryptionKeySize=0);
 	
     private:
 	gourou::DRMProcessorClient* client;
@@ -214,12 +220,12 @@ namespace gourou
 	void fetchLicenseServiceCertificate(const std::string& licenseURL,
 					    const std::string& operatorURL);
 	void decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey);
-	void removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut);
+	void removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut, const unsigned char* encryptionKey, unsigned encryptionKeySize);
 	void generatePDFObjectKey(int version,
 				  const unsigned char* masterKey, unsigned int masterKeyLength,
 				  int objectId, int objectGenerationNumber,
 				  unsigned char* keyOut);
-	void removePDFDRM(const std::string& filenameIn, const std::string& filenameOut);
+	void removePDFDRM(const std::string& filenameIn, const std::string& filenameOut, const unsigned char* encryptionKey, unsigned encryptionKeySize);
     };
 }
 

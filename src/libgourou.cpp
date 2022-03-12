@@ -949,7 +949,8 @@ namespace gourou
     }
 
     
-    void DRMProcessor::removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut)
+    void DRMProcessor::removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut,
+				     const unsigned char* encryptionKey, unsigned encryptionKeySize)
     {
 	ByteArray zipData;
 	bool removeEncryptionXML = true;
@@ -962,7 +963,16 @@ namespace gourou
 	std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
 	unsigned char decryptedKey[RSA_KEY_SIZE];
 
-	decryptADEPTKey(encryptedKey, decryptedKey);
+	if (!encryptionKey)
+	    decryptADEPTKey(encryptedKey, decryptedKey);
+	else
+	{
+	    GOUROU_LOG(DEBUG, "Use provided encryption key");
+	    if (encryptionKeySize != 16)
+		EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Provided encryption key must be 16 bytes");
+
+	    memcpy(&decryptedKey[sizeof(decryptedKey)-16], encryptionKey, encryptionKeySize);
+	}
 	
 	client->zipReadFile(zipHandler, "META-INF/encryption.xml", zipData);
 	pugi::xml_document encryptionDoc;
@@ -1001,7 +1011,7 @@ namespace gourou
 		unsigned int dataOutLength;
 
 		client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
-				decryptedKey+RSA_KEY_SIZE-16, 16, /* Key */
+				decryptedKey+sizeof(decryptedKey)-16, 16, /* Key */
 				_data, 16, /* IV */
 				&_data[16], zipData.length()-16,
 				_clearData, &dataOutLength);
@@ -1068,14 +1078,15 @@ namespace gourou
 	}
     }
     
-    void DRMProcessor::removePDFDRM(const std::string& filenameIn, const std::string& filenameOut)
+    void DRMProcessor::removePDFDRM(const std::string& filenameIn, const std::string& filenameOut,
+				    const unsigned char* encryptionKey, unsigned encryptionKeySize)
     {
 	uPDFParser::Parser parser;
 	bool EBXHandlerFound = false;
-
+		
 	if (filenameIn == filenameOut)
 	{
-	    EXCEPTION(DRM_IN_OUT_EQUALS, "PDF IN must be different of PDF OUT");		    
+	    EXCEPTION(DRM_IN_OUT_EQUALS, "PDF IN must be different of PDF OUT");
 	}
 	
 	try
@@ -1134,7 +1145,17 @@ namespace gourou
 
 		std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
 
-		decryptADEPTKey(encryptedKey, decryptedKey);
+		if (!encryptionKey)
+		    decryptADEPTKey(encryptedKey, decryptedKey);
+		else
+		{
+		    GOUROU_LOG(DEBUG, "Use provided encryption key");
+		    if (encryptionKeySize != 16)
+			EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Provided encryption key must be 16 bytes");
+
+		    memcpy(&decryptedKey[sizeof(decryptedKey)-16], encryptionKey, encryptionKeySize);
+		}
+		
 		ebxId = ebx->objectId();
 
 		break;
@@ -1149,7 +1170,7 @@ namespace gourou
 	for(it = objects.begin(); it != objects.end(); it++)
 	{
 	    uPDFParser::Object* object = *it;
-
+	        
 	    if (object->objectId() == ebxId)
 	    {
 		// object->deleteKey("Filter");
@@ -1168,7 +1189,7 @@ namespace gourou
 	    unsigned char tmpKey[16];
 
 	    generatePDFObjectKey(ebxVersion->value(),
-				 decryptedKey+RSA_KEY_SIZE-16, 16,
+				 decryptedKey+sizeof(decryptedKey)-16, 16,
 				 object->objectId(), object->generationNumber(),
 				 tmpKey);
 
@@ -1233,6 +1254,8 @@ namespace gourou
 				clearData, &dataOutLength);
 		
 		stream->setData(clearData, dataOutLength, true);
+		if (dataOutLength != dataLength)
+		    GOUROU_LOG(DEBUG, "New size " << dataOutLength);
 	    }
 	}
 
@@ -1243,11 +1266,11 @@ namespace gourou
     }
     
     void DRMProcessor::removeDRM(const std::string& filenameIn, const std::string& filenameOut,
-				 ITEM_TYPE type)
+				 ITEM_TYPE type, const unsigned char* encryptionKey, unsigned encryptionKeySize)
     {
 	if (type == PDF)
-	    removePDFDRM(filenameIn, filenameOut);
+	    removePDFDRM(filenameIn, filenameOut, encryptionKey, encryptionKeySize);
 	else
-	    removeEPubDRM(filenameIn, filenameOut);
+	    removeEPubDRM(filenameIn, filenameOut, encryptionKey, encryptionKeySize);
     }
 }
