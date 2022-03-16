@@ -26,23 +26,15 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <unistd.h>
 #include <getopt.h>
 
 #include <iostream>
 
-#include <QFile>
-#include <QDir>
-#include <QCoreApplication>
-#include <QRunnable>
-#include <QThreadPool>
-#include <QTemporaryFile>
-
 #include <libgourou.h>
 #include <libgourou_common.h>
-#include "drmprocessorclientimpl.h"
 
-#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+#include "drmprocessorclientimpl.h"
+#include "utils_common.h"
 
 static const char* deviceFile     = "device.xml";
 static const char* activationFile = "activation.xml";
@@ -50,13 +42,9 @@ static const char* devicekeyFile  = "devicesalt";
 static const char* inputFile      = 0;
 static const char* outputFile     = 0;
 static const char* outputDir      = 0;
-static const char* defaultDirs[]  = {
-    ".adept/",
-    "./adobe-digital-editions/",
-    "./.adobe-digital-editions/"
-};
-static char* encryptionKeyUser  = 0;
-static unsigned char* encryptionKey  = 0;
+
+static char*          encryptionKeyUser  = 0;
+static unsigned char* encryptionKey      = 0;
 static unsigned       encryptionKeySize  = 0;
 
 static inline unsigned char htoi(unsigned char c)
@@ -78,16 +66,11 @@ static inline bool endsWith(const std::string& s, const std::string& suffix)
     return s.rfind(suffix) == std::abs((int)(s.size()-suffix.size()));
 }
 
-class ADEPTRemove: public QRunnable
+class ADEPTRemove
 {
 public:
-    ADEPTRemove(QCoreApplication* app):
-	app(app)
-    {
-	setAutoDelete(false);
-    }
    
-    void run()
+    int run()
     {
 	int ret = 0;
 	try
@@ -104,9 +87,8 @@ public:
 	    
 	    if (outputDir)
 	    {
-		QDir dir(outputDir);
-		if (!dir.exists(outputDir))
-		    dir.mkpath(outputDir);
+		if (!fileExists(outputDir))
+		    mkpath(outputDir);
 
 		filename = std::string(outputDir) + "/" + filename;
 	    }
@@ -122,11 +104,8 @@ public:
 	    
 	    if (inputFile != filename)
 	    {
-		QFile::remove(filename.c_str());
-		if (!QFile::copy(inputFile, filename.c_str()))
-		{
-		    EXCEPTION(gourou::DRM_FILE_ERROR, "Unable to copy " << inputFile << " into " << filename);
-		}
+		unlink(filename.c_str());
+		fileCopy(inputFile, filename.c_str());
 		processor.removeDRM(inputFile, filename, type, encryptionKey, encryptionKeySize);
 		std::cout << "DRM removed into new file " << filename << std::endl;
 	    }
@@ -135,18 +114,16 @@ public:
 		// Use temp file for PDF
 		if (type == gourou::DRMProcessor::ITEM_TYPE::PDF)
 		{
-		    QTemporaryFile tempFile;
-		    tempFile.open();
-		    tempFile.setAutoRemove(false); // In case of failure
-		    processor.removeDRM(inputFile, tempFile.fileName().toStdString(), type, encryptionKey, encryptionKeySize);
+		    char* tempFile = tempnam("/tmp", NULL);
+		    processor.removeDRM(inputFile, tempFile, type, encryptionKey, encryptionKeySize);
 		    /* Original file must be removed before doing a copy... */
-		    QFile origFile(inputFile);
-		    origFile.remove();
-		    if (!QFile::copy(tempFile.fileName(), filename.c_str()))
+		    unlink(inputFile);
+		    if (!rename(tempFile, filename.c_str()))
 		    {
-			EXCEPTION(gourou::DRM_FILE_ERROR, "Unable to copy " << tempFile.fileName().toStdString() << " into " << filename);
+			free(tempFile);
+			EXCEPTION(gourou::DRM_FILE_ERROR, "Unable to copy " << tempFile << " into " << filename);
 		    }
-		    tempFile.setAutoRemove(true);
+		    free(tempFile);
 		}
 		else
 		    processor.removeDRM(inputFile, filename, type, encryptionKey, encryptionKeySize);
@@ -158,37 +135,9 @@ public:
 	    ret = 1;
 	}
 
-	this->app->exit(ret);
+	return ret;
     }
-
-private:
-    QCoreApplication* app;
 };	      
-
-static const char* findFile(const char* filename, bool inDefaultDirs=true)
-{
-    QFile file(filename);
-
-    if (file.exists())
-	return strdup(filename);
-
-    if (!inDefaultDirs) return 0;
-    
-    for (int i=0; i<(int)ARRAY_SIZE(defaultDirs); i++)
-    {
-	QString path = QString(defaultDirs[i]) + QString(filename);
-	file.setFileName(path);
-	if (file.exists())
-	    return strdup(path.toStdString().c_str());
-    }
-    
-    return 0;
-}
-
-static void version(void)
-{
-    std::cout << "Current libgourou version : " << gourou::DRMProcessor::VERSION << std::endl ;
-}
 
 static void usage(const char* cmd)
 {
@@ -288,8 +237,7 @@ int main(int argc, char** argv)
 	return -1;
     }
 
-    QCoreApplication app(argc, argv);
-    ADEPTRemove remover(&app);
+    ADEPTRemove remover;
 
     int i;
     bool hasErrors = false;
@@ -335,10 +283,8 @@ int main(int argc, char** argv)
     if (hasErrors)
 	goto end;
        
-    QThreadPool::globalInstance()->start(&remover);
-
-    ret = app.exec();
-
+    ret = remover.run();
+    
 end:
     for (i=0; i<(int)ARRAY_SIZE(files); i++)
     {

@@ -1,10 +1,10 @@
 
 TARGETS=acsmdownloader adept_activate adept_remove
 
-CXXFLAGS=-Wall `pkg-config --cflags Qt5Core Qt5Network` -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
+CXXFLAGS=-Wall -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
 
 STATIC_DEP=
-LDFLAGS=`pkg-config --libs Qt5Core Qt5Network` -L$(ROOT) -lcrypto -lzip -lz
+LDFLAGS=-L$(ROOT) -lcrypto -lzip -lz -lcurl
 
 ifneq ($(STATIC_UTILS),)
 STATIC_DEP = $(ROOT)/libgourou.a
@@ -18,7 +18,7 @@ else
 CXXFLAGS += -O2
 endif
 
-COMMON_DEPS = drmprocessorclientimpl.cpp $(STATIC_DEP)
+COMMON_DEPS = drmprocessorclientimpl.cpp utils_common.cpp $(STATIC_DEP)
 
 all: $(TARGETS)
 

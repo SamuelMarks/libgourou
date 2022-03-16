@@ -28,22 +28,16 @@
 
 #include <unistd.h>
 #include <getopt.h>
-#include <stdlib.h>
 #include <termios.h>
+#include <string.h>
+#include <limits.h>
 
 #include <iostream>
 #include <ostream>
 
-#include <QFile>
-#include <QDir>
-#include <QCoreApplication>
-#include <QRunnable>
-#include <QThreadPool>
-
 #include <libgourou.h>
 #include "drmprocessorclientimpl.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+#include "utils_common.h"
 
 static const char* username      = 0;
 static const char* password      = 0;
@@ -100,16 +94,11 @@ static std::string getpass(const char *prompt, bool show_asterisk=false)
 }
 
 
-class ADEPTActivate: public QRunnable
+class ADEPTActivate
 {
-public:
-    ADEPTActivate(QCoreApplication* app):
-	app(app)
-    {
-	setAutoDelete(false);
-    }
-   
-    void run()
+public:  
+
+    int run()
     {
 	int ret = 0;
 	try
@@ -128,17 +117,10 @@ public:
 	    ret = 1;
 	}
 
-	this->app->exit(ret);
+	return ret;
     }
-
-private:
-    QCoreApplication* app;
 };	      
 
-static void version(void)
-{
-    std::cout << "Current libgourou version : " << gourou::DRMProcessor::VERSION << std::endl ;
-}
 
 static void usage(const char* cmd)
 {
@@ -162,8 +144,8 @@ static void usage(const char* cmd)
 static const char* abspath(const char* filename)
 {
     const char* root = getcwd(0, PATH_MAX);
-    QString fullPath = QString(root) + QString("/") + QString(filename);
-    const char* res = strdup(fullPath.toStdString().c_str());
+    std::string fullPath = std::string(root) + std::string("/") + filename;
+    const char* res = strdup(fullPath.c_str());
 
     free((void*)root);
 
@@ -255,9 +237,8 @@ int main(int argc, char** argv)
 	// Relative path
 	if (_outputDir[0] == '.' || _outputDir[0] != '/')
 	{
-	    QFile file(_outputDir);
 	    // realpath doesn't works if file/dir doesn't exists
-	    if (file.exists())
+	    if (fileExists(_outputDir))
 		outputDir = strdup(realpath(_outputDir, 0));
 	    else
 		outputDir = strdup(abspath(_outputDir));
@@ -266,10 +247,8 @@ int main(int argc, char** argv)
 	    outputDir = strdup(_outputDir);
     }
 
-    QCoreApplication app(argc, argv);
-
-    QFile file(outputDir);
-    if (file.exists())
+    std::string pass;
+    if (fileExists(outputDir))
     {
 	int key;
 	
@@ -289,7 +268,6 @@ int main(int argc, char** argv)
 	    ;
     }
 
-    std::string pass;
     if (!password)
     {
 	char prompt[128];
@@ -298,13 +276,11 @@ int main(int argc, char** argv)
 	password = pass.c_str();
     }
         
-    ADEPTActivate activate(&app);
-    QThreadPool::globalInstance()->start(&activate);
+    ADEPTActivate activate;
 
-    ret = app.exec();
+    ret = activate.run();
 
-end:
-    
+end:    
     free((void*)outputDir);
     return ret;
 }

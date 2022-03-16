@@ -39,8 +39,7 @@ For libgourou :
 
 For utils :
 
-  * QT5Core
-  * QT5Network
+  * libcurl
   * OpenSSL
   * libzip
 

@@ -26,21 +26,14 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <unistd.h>
-#include <getopt.h>
+ #include <getopt.h>
 
 #include <iostream>
-
-#include <QFile>
-#include <QDir>
-#include <QCoreApplication>
-#include <QRunnable>
-#include <QThreadPool>
+#include <algorithm>
 
 #include <libgourou.h>
 #include "drmprocessorclientimpl.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+#include "utils_common.h"
 
 static const char* deviceFile     = "device.xml";
 static const char* activationFile = "activation.xml";
@@ -49,23 +42,13 @@ static const char* acsmFile       = 0;
 static       bool  exportPrivateKey = false;
 static const char* outputFile     = 0;
 static const char* outputDir      = 0;
-static const char* defaultDirs[]  = {
-    ".adept/",
-    "./adobe-digital-editions/",
-    "./.adobe-digital-editions/"
-};
 
 
-class ACSMDownloader: public QRunnable
+class ACSMDownloader
 {
 public:
-    ACSMDownloader(QCoreApplication* app):
-	app(app)
-    {
-	setAutoDelete(false);
-    }
-   
-    void run()
+    
+    int run()
     {
 	int ret = 0;
 	try
@@ -84,9 +67,8 @@ public:
 	    
 		if (outputDir)
 		{
-		    QDir dir(outputDir);
-		    if (!dir.exists(outputDir))
-			dir.mkpath(outputDir);
+		    if (!fileExists(outputDir))
+			mkpath(outputDir);
 		    
 		    filename = std::string(outputDir) + "/" + filename;
 		}
@@ -116,9 +98,8 @@ public:
 	    
 		if (outputDir)
 		{
-		    QDir dir(outputDir);
-		    if (!dir.exists(outputDir))
-			dir.mkpath(outputDir);
+		    if (!fileExists(outputDir))
+			mkpath(outputDir);
 
 		    filename = std::string(outputDir) + "/" + filename;
 		}
@@ -132,8 +113,7 @@ public:
 			finalName += ".pdf";
 		    else
 			finalName += ".epub";
-		    QDir dir;
-		    dir.rename(filename.c_str(), finalName.c_str());
+		    rename(filename.c_str(), finalName.c_str());
 		    filename = finalName;
 		}
 		std::cout << "Created " << filename << std::endl;
@@ -144,37 +124,10 @@ public:
 	    ret = 1;
 	}
 
-	this->app->exit(ret);
+	return ret;
     }
-
-private:
-    QCoreApplication* app;
 };	      
 
-static const char* findFile(const char* filename, bool inDefaultDirs=true)
-{
-    QFile file(filename);
-
-    if (file.exists())
-	return strdup(filename);
-
-    if (!inDefaultDirs) return 0;
-    
-    for (int i=0; i<(int)ARRAY_SIZE(defaultDirs); i++)
-    {
-	QString path = QString(defaultDirs[i]) + QString(filename);
-	file.setFileName(path);
-	if (file.exists())
-	    return strdup(path.toStdString().c_str());
-    }
-    
-    return 0;
-}
-
-static void version(void)
-{
-    std::cout << "Current libgourou version : " << gourou::DRMProcessor::VERSION << std::endl ;
-}
 
 static void usage(const char* cmd)
 {
@@ -275,8 +228,7 @@ int main(int argc, char** argv)
 	return -1;
     }
 
-    QCoreApplication app(argc, argv);
-    ACSMDownloader downloader(&app);
+    ACSMDownloader downloader;
 
     int i;
     bool hasErrors = false;
@@ -306,8 +258,7 @@ int main(int argc, char** argv)
     }
     else
     {
-	QFile file(acsmFile);
-	if (!file.exists())
+	if (!fileExists(acsmFile))
 	{
 	    std::cout << "Error : " << acsmFile << " doesn't exists" << std::endl;
 	    ret = -1;
@@ -315,9 +266,7 @@ int main(int argc, char** argv)
 	}
     }
     
-    QThreadPool::globalInstance()->start(&downloader);
-
-    ret = app.exec();
+    ret = downloader.run();
 
 end:
     for (i=0; i<(int)ARRAY_SIZE(files); i++)
