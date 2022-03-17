@@ -287,15 +287,27 @@ namespace gourou
     }
 
     /**
-     * @brief Write data in a file. If it already exists, it's truncated
+     * @brief Open a file descriptor on path. If it already exists, it's truncated
+     *
+     * @return Created fd, must be closed
      */
-    static inline void writeFile(std::string path, const unsigned char* data, unsigned int length)
+    static inline int createNewFile(std::string path)
     {
 	int fd = open(path.c_str(), O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
 
 	if (fd <= 0)
 	    EXCEPTION(GOUROU_FILE_ERROR, "Unable to create " << path);
 
+	return fd;
+    }
+    
+    /**
+     * @brief Write data in a file. If it already exists, it's truncated
+     */
+    static inline void writeFile(std::string path, const unsigned char* data, unsigned int length)
+    {
+	int fd = createNewFile(path);
+	
 	if (write(fd, data, length) != length)
 	    EXCEPTION(GOUROU_FILE_ERROR, "Write error for file " << path);
 

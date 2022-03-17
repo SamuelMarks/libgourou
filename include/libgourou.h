@@ -130,14 +130,15 @@ namespace gourou
 	/**
 	 * @brief Send HTTP (GET or POST) request
 	 *
-	 * @param URL            HTTP URL
-	 * @param POSTData       POST data if needed, if not set, a GET request is done
-	 * @param contentType    Optional content type of POST Data
+	 * @param URL             HTTP URL
+	 * @param POSTData        POST data if needed, if not set, a GET request is done
+	 * @param contentType     Optional content type of POST Data
 	 * @param responseHeaders Optional Response headers of HTTP request
+	 * @param fd              Optional File descriptor to write received data
 	 *
 	 * @return data of HTTP response
 	 */
-	ByteArray sendRequest(const std::string& URL, const std::string& POSTData=std::string(), const char* contentType=0, std::map<std::string, std::string>* responseHeaders=0);
+	ByteArray sendRequest(const std::string& URL, const std::string& POSTData=std::string(), const char* contentType=0, std::map<std::string, std::string>* responseHeaders=0, int fd=0);
 
 	/**
 	 * @brief Send HTTP POST request to URL with document as POSTData

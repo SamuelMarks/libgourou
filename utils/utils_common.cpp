@@ -106,7 +106,7 @@ void fileCopy(const char* in, const char* out)
     if (!fdIn)
 	EXCEPTION(gourou::CLIENT_FILE_ERROR, "Unable to open " << in);
     
-    fdOut = open(out, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+    fdOut = gourou::createNewFile(out);
     
     if (!fdOut)
     {

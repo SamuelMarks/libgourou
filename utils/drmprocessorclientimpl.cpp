@@ -137,6 +137,17 @@ static size_t curlRead(void *data, size_t size, size_t nmemb, void *userp)
     return size*nmemb;
 }
 
+static size_t curlReadFd(void *data, size_t size, size_t nmemb, void *userp)
+{
+    int fd = *(int*) userp;
+
+    size_t res = write(fd, data, size*nmemb);
+
+    downloadedBytes += res;
+
+    return res;
+}
+
 static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userdata)
 {
     std::map<std::string, std::string>* responseHeaders = (std::map<std::string, std::string>*)userdata;
@@ -162,7 +173,7 @@ static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userda
     return size*nitems;
 }
 
-std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders)
+std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders, int fd)
 {
     gourou::ByteArray replyData;
     std::map<std::string, std::string> localHeaders;
@@ -201,9 +212,17 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, POSTData.data());
     }
 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlRead);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&replyData);
-
+    if (fd)
+    {
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlReadFd);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&fd);
+    }
+    else
+    {
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlRead);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&replyData);
+    }
+    
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, curlHeaders);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)responseHeaders);
     

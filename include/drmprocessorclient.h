@@ -98,10 +98,11 @@ namespace gourou
 	 * @param POSTData        POST data if needed, if not set, a GET request is done
 	 * @param contentType     Optional content type of POST Data
 	 * @param responseHeaders Optional Response headers of HTTP request
+	 * @param fd              Optional file descriptor to write request result
 	 *
 	 * @return data of HTTP response
 	 */
-	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0) = 0;
+	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0, int fd=0) = 0;
     };
 
     class RSAInterface

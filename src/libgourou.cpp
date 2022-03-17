@@ -300,12 +300,14 @@ namespace gourou
 	appendTextElem(root, "adept:expiration", buffer);
     }
     
-    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType, std::map<std::string, std::string>* responseHeaders)
+    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType, std::map<std::string, std::string>* responseHeaders, int fd)
     {
 	if (contentType == 0)
 	    contentType = "";
-	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType, responseHeaders);
+	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType, responseHeaders, fd);
 
+	if (fd) return ByteArray();
+	
 	pugi::xml_document replyDoc;
 	replyDoc.load_buffer(reply.c_str(), reply.length());
 
@@ -589,10 +591,12 @@ namespace gourou
 	    EXCEPTION(DW_NO_ITEM, "No item");
 
 	std::map<std::string, std::string> headers;
-	
-	ByteArray replyData = sendRequest(item->getDownloadURL(), "", 0, &headers);
 
-	writeFile(path, replyData);
+	int fd = createNewFile(path);
+	
+	sendRequest(item->getDownloadURL(), "", 0, &headers, fd);
+
+	close(fd);
 
 	GOUROU_LOG(INFO, "Download into " << path);
 
