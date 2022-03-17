@@ -110,7 +110,9 @@ void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned int len
 }
 
 /* HTTP interface */
-#define DISPLAY_THRESHOLD 10*1024 // Threshold to display download progression
+#define HTTP_REQ_MAX_RETRY  5
+#define DISPLAY_THRESHOLD   10*1024 // Threshold to display download progression
+static unsigned downloadedBytes;
 
 static int downloadProgress(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
 			    curl_off_t ultotal, curl_off_t ulnow)
@@ -187,6 +189,8 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	GOUROU_LOG(gourou::DEBUG, "<<< " << std::endl << POSTData);
     }
 
+    unsigned prevDownloadedBytes;
+    downloadedBytes = 0;
     CURL *curl = curl_easy_init();
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, URL.c_str());
@@ -228,15 +232,48 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, downloadProgress);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+
+    for (int i=0; i<HTTP_REQ_MAX_RETRY; i++)
+    {
+	prevDownloadedBytes = downloadedBytes;
+	if (downloadedBytes)
+	    curl_easy_setopt(curl, CURLOPT_RESUME_FROM, downloadedBytes);
+	    
+	res = curl_easy_perform(curl);
+
+	// Connexion failed, wait & retry
+	if (res == CURLE_COULDNT_CONNECT)
+	{
+	    GOUROU_LOG(gourou::WARN, "Connection failed, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);	    
+	}
+	// Transfer failed but some data has been received
+	// --> try again without incrementing tries
+	else if (res == CURLE_RECV_ERROR)
+	{
+	    if (prevDownloadedBytes != downloadedBytes)
+	    {
+		GOUROU_LOG(gourou::WARN, "Connection broken, but data received, try again");	    
+		i--;
+	    }
+	    else
+		GOUROU_LOG(gourou::WARN, "Connection broken and no data received, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);
+	}
+	// Other error --> fail
+	else
+	    break;
+
+	// Wait a little bit (250ms * i)
+	usleep((250 * 1000) * (i+1));
+    }
     
-    res = curl_easy_perform(curl);
     curl_slist_free_all(list);
     curl_easy_cleanup(curl);
    
     if (res != CURLE_OK)
 	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << curl_easy_strerror(res));
     
-    if (replyData.size() >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::WARN)
+    if ((downloadedBytes >= DISPLAY_THRESHOLD || replyData.size() >= DISPLAY_THRESHOLD) &&
+	gourou::logLevel >= gourou::WARN)
 	std::cout << std::endl;
 
     if ((*responseHeaders)["Content-Type"] == "application/vnd.adobe.adept+xml")
