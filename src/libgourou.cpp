@@ -671,7 +671,10 @@ namespace gourou
 	pugi::xml_node signIn = signInRequest.append_child("adept:signIn");
 	signIn.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
 	std::string loginMethod = user->getLoginMethod();
-	if (loginMethod.size())
+
+	if (adobeID == "anonymous")
+	    signIn.append_attribute("method") = "anonymous";
+	else if (loginMethod.size())
 	    signIn.append_attribute("method") = loginMethod.c_str();
 	else
 	    signIn.append_attribute("method") = "AdobeID";
