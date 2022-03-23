@@ -300,11 +300,11 @@ namespace gourou
 	appendTextElem(root, "adept:expiration", buffer);
     }
     
-    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType, std::map<std::string, std::string>* responseHeaders, int fd)
+    ByteArray DRMProcessor::sendRequest(const std::string& URL, const std::string& POSTdata, const char* contentType, std::map<std::string, std::string>* responseHeaders, int fd, bool resume)
     {
 	if (contentType == 0)
 	    contentType = "";
-	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType, responseHeaders, fd);
+	std::string reply = client->sendHTTPRequest(URL, POSTdata, contentType, responseHeaders, fd, resume);
 
 	if (fd) return ByteArray();
 	
@@ -583,7 +583,7 @@ namespace gourou
 	return new FulfillmentItem(fulfillReply, user);
     }
 
-    DRMProcessor::ITEM_TYPE DRMProcessor::download(FulfillmentItem* item, std::string path)
+    DRMProcessor::ITEM_TYPE DRMProcessor::download(FulfillmentItem* item, std::string path, bool resume)
     {
 	ITEM_TYPE res = EPUB;
 	
@@ -592,9 +592,9 @@ namespace gourou
 
 	std::map<std::string, std::string> headers;
 
-	int fd = createNewFile(path);
+	int fd = createNewFile(path, !resume);
 	
-	sendRequest(item->getDownloadURL(), "", 0, &headers, fd);
+	sendRequest(item->getDownloadURL(), "", 0, &headers, fd, resume);
 
 	close(fd);
 

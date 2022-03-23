@@ -175,7 +175,7 @@ static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userda
     return size*nitems;
 }
 
-std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders, int fd)
+std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, const std::string& POSTData, const std::string& contentType, std::map<std::string, std::string>* responseHeaders, int fd, bool resume)
 {
     gourou::ByteArray replyData;
     std::map<std::string, std::string> localHeaders;
@@ -191,6 +191,18 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 
     unsigned prevDownloadedBytes;
     downloadedBytes = 0;
+    if (fd && resume)
+    {
+	struct stat _stat;
+	if (!fstat(fd, &_stat))
+	{
+	    GOUROU_LOG(gourou::WARN, "Resume download @ " << _stat.st_size << " bytes");
+	    downloadedBytes = _stat.st_size;
+	}
+	else
+	    GOUROU_LOG(gourou::WARN, "Want to resume, but fstat failed");
+    }
+    
     CURL *curl = curl_easy_init();
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, URL.c_str());
@@ -244,7 +256,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	// Connexion failed, wait & retry
 	if (res == CURLE_COULDNT_CONNECT)
 	{
-	    GOUROU_LOG(gourou::WARN, "Connection failed, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);	    
+	    GOUROU_LOG(gourou::WARN, "\nConnection failed, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);	    
 	}
 	// Transfer failed but some data has been received
 	// --> try again without incrementing tries
@@ -252,11 +264,11 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	{
 	    if (prevDownloadedBytes != downloadedBytes)
 	    {
-		GOUROU_LOG(gourou::WARN, "Connection broken, but data received, try again");	    
+		GOUROU_LOG(gourou::WARN, "\nConnection broken, but data received, try again");	    
 		i--;
 	    }
 	    else
-		GOUROU_LOG(gourou::WARN, "Connection broken and no data received, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);
+		GOUROU_LOG(gourou::WARN, "\nConnection broken and no data received, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);
 	}
 	// Other error --> fail
 	else

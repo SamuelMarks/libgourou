@@ -42,6 +42,7 @@ static const char* acsmFile       = 0;
 static       bool  exportPrivateKey = false;
 static const char* outputFile     = 0;
 static const char* outputDir      = 0;
+static       bool  resume         = false;
 
 
 class ACSMDownloader
@@ -104,7 +105,7 @@ public:
 		    filename = std::string(outputDir) + "/" + filename;
 		}
 	    
-		gourou::DRMProcessor::ITEM_TYPE type = processor.download(item, filename);
+		gourou::DRMProcessor::ITEM_TYPE type = processor.download(item, filename, resume);
 
 		if (!outputFile)
 		{
@@ -133,7 +134,7 @@ static void usage(const char* cmd)
 {
     std::cout << "Download EPUB file from ACSM request file" << std::endl;
     
-    std::cout << "Usage: " << cmd << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)" << std::endl << std::endl;
+    std::cout << "Usage: " << cmd << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-r|--resume)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)" << std::endl << std::endl;
     
     std::cout << "  " << "-d|--device-file"     << "\t"   << "device.xml file from eReader" << std::endl;
     std::cout << "  " << "-a|--activation-file" << "\t"   << "activation.xml file from eReader" << std::endl;
@@ -142,6 +143,7 @@ static void usage(const char* cmd)
     std::cout << "  " << "-o|--output-file"     << "\t"   << "Optional output filename (default <title.(epub|pdf|der)>)" << std::endl;
     std::cout << "  " << "-f|--acsm-file"       << "\t"   << "ACSM request file for epub download" << std::endl;
     std::cout << "  " << "-e|--export-private-key"<< "\t" << "Export private key in DER format" << std::endl;
+    std::cout << "  " << "-r|--resume"          << "\t\t" << "Try to resume download (in case of previous failure)" << std::endl;
     std::cout << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
     std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
     std::cout << "  " << "-h|--help"            << "\t\t" << "This help" << std::endl;
@@ -171,13 +173,14 @@ int main(int argc, char** argv)
 	    {"output-file",      required_argument, 0,  'o' },
 	    {"acsm-file",        required_argument, 0,  'f' },
 	    {"export-private-key",no_argument,      0,  'e' },
+	    {"resume",           no_argument,       0,  'r' },
 	    {"verbose",          no_argument,       0,  'v' },
 	    {"version",          no_argument,       0,  'V' },
 	    {"help",             no_argument,       0,  'h' },
 	    {0,                  0,                 0,  0 }
 	};
 
-	c = getopt_long(argc, argv, "d:a:k:O:o:f:evVh",
+	c = getopt_long(argc, argv, "d:a:k:O:o:f:ervVh",
                         long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -203,6 +206,9 @@ int main(int argc, char** argv)
 	    break;
 	case 'e':
 	    exportPrivateKey = true;
+	    break;
+	case 'r':
+	    resume = true;
 	    break;
 	case 'v':
 	    verbose++;

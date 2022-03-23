@@ -99,10 +99,11 @@ namespace gourou
 	 * @param contentType     Optional content type of POST Data
 	 * @param responseHeaders Optional Response headers of HTTP request
 	 * @param fd              Optional file descriptor to write request result
+	 * @param resume          false if target file should be truncated, true to try resume download (works only in combination with a valid fd)
 	 *
 	 * @return data of HTTP response
 	 */
-	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0, int fd=0) = 0;
+	virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0, int fd=0, bool resume=false) = 0;
     };
 
     class RSAInterface

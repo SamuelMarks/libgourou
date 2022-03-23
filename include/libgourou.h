@@ -81,10 +81,11 @@ namespace gourou
 	 *
 	 * @param item            Item from fulfill() method
 	 * @param path            Output file path 
+	 * @param resume          false if target file should be truncated, true to try resume download
 	 *
 	 * @return Type of downloaded item
 	 */
-	ITEM_TYPE download(FulfillmentItem* item, std::string path);
+	ITEM_TYPE download(FulfillmentItem* item, std::string path, bool resume=false);
 
 	/**
 	 * @brief SignIn into ACS Server (required to activate device)
@@ -135,10 +136,11 @@ namespace gourou
 	 * @param contentType     Optional content type of POST Data
 	 * @param responseHeaders Optional Response headers of HTTP request
 	 * @param fd              Optional File descriptor to write received data
+	 * @param resume          false if target file should be truncated, true to try resume download (works only in combination of a valid fd)
 	 *
 	 * @return data of HTTP response
 	 */
-	ByteArray sendRequest(const std::string& URL, const std::string& POSTData=std::string(), const char* contentType=0, std::map<std::string, std::string>* responseHeaders=0, int fd=0);
+	ByteArray sendRequest(const std::string& URL, const std::string& POSTData=std::string(), const char* contentType=0, std::map<std::string, std::string>* responseHeaders=0, int fd=0, bool resume=false);
 
 	/**
 	 * @brief Send HTTP POST request to URL with document as POSTData

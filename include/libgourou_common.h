@@ -287,13 +287,19 @@ namespace gourou
     }
 
     /**
-     * @brief Open a file descriptor on path. If it already exists, it's truncated
+     * @brief Open a file descriptor on path. If it already exists and truncate == true, it's truncated
      *
      * @return Created fd, must be closed
      */
-    static inline int createNewFile(std::string path)
+    static inline int createNewFile(std::string path, bool truncate=true)
     {
-	int fd = open(path.c_str(), O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+	int options = O_CREAT|O_WRONLY;
+	if (truncate)
+	    options |= O_TRUNC;
+	else
+	    options |= O_APPEND;
+
+	int fd = open(path.c_str(), options, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
 
 	if (fd <= 0)
 	    EXCEPTION(GOUROU_FILE_ERROR, "Unable to create " << path);
