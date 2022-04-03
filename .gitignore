@@ -6,4 +6,5 @@ lib
 utils/acsmdownloader
 utils/adept_activate
 utils/adept_remove
-.adept
+utils/adept_loan_mgt
+.adept*
