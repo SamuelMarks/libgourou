@@ -29,6 +29,9 @@
 #ifndef _UTILS_COMMON_H_
 #define _UTILS_COMMON_H_
 
+#define LOANS_DIR            "loans/"
+#define ID_HASH_SIZE         16
+
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 
 /**

@@ -26,12 +26,15 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
- #include <getopt.h>
+#include <getopt.h>
+#include <libgen.h>
 
 #include <iostream>
 #include <algorithm>
 
 #include <libgourou.h>
+#include <libgourou_common.h>
+
 #include "drmprocessorclientimpl.h"
 #include "utils_common.h"
 
@@ -54,7 +57,6 @@ public:
 	int ret = 0;
 	try
 	{
-	    DRMProcessorClientImpl client;
 	    gourou::DRMProcessor processor(&client, deviceFile, activationFile, devicekeyFile);
 	    gourou::User* user = processor.getUser();
 	    
@@ -118,6 +120,8 @@ public:
 		    filename = finalName;
 		}
 		std::cout << "Created " << filename << std::endl;
+
+		serializeLoanToken(item);
 	    }
 	} catch(std::exception& e)
 	{
@@ -127,6 +131,52 @@ public:
 
 	return ret;
     }
+
+    void serializeLoanToken(gourou::FulfillmentItem* item)
+    {
+	gourou::LoanToken* token = item->getLoanToken();
+
+	// No loan token available
+	if (!token)
+	    return;
+
+	pugi::xml_document doc;
+
+	pugi::xml_node decl = doc.append_child(pugi::node_declaration);
+	decl.append_attribute("version") = "1.0";
+
+	pugi::xml_node root = doc.append_child("loanToken");
+	gourou::appendTextElem(root, "id",          (*token)["id"]);
+	gourou::appendTextElem(root, "operatorURL", (*token)["operatorURL"]);
+	gourou::appendTextElem(root, "validity",    (*token)["validity"]);
+	gourou::appendTextElem(root, "name",        item->getMetadata("title"));
+
+	char * activationDir = strdup(deviceFile);
+	activationDir = dirname(activationDir);
+		
+	gourou::StringXMLWriter xmlWriter;
+	doc.save(xmlWriter, "  ");
+	std::string xmlStr = xmlWriter.getResult();
+
+	// Use first bytes of SHA1(id) as filename
+	unsigned char sha1[gourou::SHA1_LEN];
+	client.digest("SHA1", (unsigned char*)(*token)["id"].c_str(), (*token)["id"].size(), sha1);
+	gourou::ByteArray tmp(sha1, sizeof(sha1));
+	std::string filenameHex = tmp.toHex();
+	std::string filename(filenameHex.c_str(), ID_HASH_SIZE);
+	std::string fullPath = std::string(activationDir);
+	fullPath += std::string ("/") + std::string(LOANS_DIR);
+	mkpath(fullPath.c_str());
+	fullPath += filename + std::string(".xml");
+	gourou::writeFile(fullPath, xmlStr);
+
+	std::cout << "Loan token serialized into " << fullPath << std::endl;
+
+	free(activationDir);
+    }
+    
+private:
+    DRMProcessorClientImpl client;
 };	      
 
 
