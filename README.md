@@ -16,7 +16,7 @@ Main fucntions to use from gourou::DRMProcessor are :
   * Create a new device : _createDRMProcessor()_
   * Register a new device : _signIn()_ and _activateDevice()_
   * Remove DRM : _removeDRM()_
-
+  * Return loaned book : _returnLoan()_
 
 You can import configuration from (at least) :
 
@@ -90,6 +90,16 @@ To remove ADEPT DRM :
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
     ./utils/adept_remove -f <encryptedFile>
+
+To list loaned books :
+
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+    ./utils/adept_loan_mgt [-l]
+
+To return a loaned book :
+
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+    ./utils/adept_loan_mgt -r <id>
 
 You can get utils full options description with -h or --help switch
 
