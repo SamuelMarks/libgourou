@@ -210,7 +210,7 @@ namespace gourou
 	void pushTag(void* sha_ctx, uint8_t tag);
 	void hashNode(const pugi::xml_node& root, void *sha_ctx, std::map<std::string,std::string> nsHash);
 	void hashNode(const pugi::xml_node& root, unsigned char* sha_out);
-	std::string signNode(const pugi::xml_node& rootNode);
+	void signNode(pugi::xml_node& rootNode);
 	void addNonce(pugi::xml_node& root);
 	void buildAuthRequest(pugi::xml_document& authReq);
 	void buildInitLicenseServiceRequest(pugi::xml_document& initLicReq, std::string operatorURL);

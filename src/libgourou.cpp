@@ -236,7 +236,7 @@ namespace gourou
 	}
     }
 
-    std::string DRMProcessor::signNode(const pugi::xml_node& rootNode)
+    void DRMProcessor::signNode(pugi::xml_node& rootNode)
     {
 	// Compute hash
 	unsigned char sha_out[SHA1_LEN];
@@ -260,9 +260,8 @@ namespace gourou
 	    printf("\n");
 	}
 
-	ByteArray signature(res, sizeof(res));
-
-	return signature.toBase64();
+	std::string signature = ByteArray(res, sizeof(res)).toBase64();
+	appendTextElem(rootNode, "adept:signature", signature);
     }
 
     void DRMProcessor::addNonce(pugi::xml_node& root)
@@ -368,8 +367,7 @@ namespace gourou
 	addNonce(root);
 	appendTextElem(root, "adept:user",        user->getUUID());
 
-	std::string signature = signNode(root);
-	appendTextElem(root, "adept:signature",   signature);
+	signNode(root);
     }
     
     void DRMProcessor::doOperatorAuth(std::string operatorURL)
@@ -530,12 +528,10 @@ namespace gourou
 	
 	hmacParentNode.remove_child(hmacNode);
 
-	std::string signature = signNode(rootNode);
+	signNode(rootNode);
 	
 	// Add removed HMAC
 	appendTextElem(hmacParentNode, hmacNode.name(), hmacNode.first_child().value());
-	
-	appendTextElem(rootNode, "adept:signature", signature);
 
 	pugi::xpath_node node = acsmDoc.select_node("//operatorURL");
 	if (!node)
@@ -823,10 +819,7 @@ namespace gourou
 
 	pugi::xml_node root = activateReq.select_node("adept:activate").node();
 
-	std::string signature = signNode(root);
-
-	root = activateReq.select_node("adept:activate").node();
-	appendTextElem(root, "adept:signature", signature);
+	signNode(root);
 
 	pugi::xml_document activationDoc;
 	user->readActivation(activationDoc);
