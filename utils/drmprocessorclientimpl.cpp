@@ -45,27 +45,6 @@
 #include <libgourou_log.h>
 #include "drmprocessorclientimpl.h"
 
-// https://stackoverflow.com/questions/216823/how-to-trim-a-stdstring
-// trim from start (in place)
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
-
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-// trim from both ends (in place)
-static inline void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
-}
-
 /* Digest interface */
 void* DRMProcessorClientImpl::createDigest(const std::string& digestName)
 {
@@ -163,8 +142,8 @@ static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userda
 	std::string key   = std::string(buffer, pos);
 	std::string value = std::string(&buffer[pos+1], (size*nitems)-(pos+1));
 
-	trim(key);
-	trim(value);
+	key = gourou::trim(key);
+	value = gourou::trim(value);
 
 	(*responseHeaders)[key] = value;
     
