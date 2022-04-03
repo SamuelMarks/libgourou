@@ -40,7 +40,7 @@
 #define ACS_SERVER              "http://adeactivate.adobe.com/adept"
 #endif
 
-#define LIBGOUROU_VERSION       "0.6"
+#define LIBGOUROU_VERSION       "0.7"
 
 namespace gourou
 {
@@ -100,6 +100,14 @@ namespace gourou
 	 */
 	void activateDevice();
 
+	/**
+	 * @brief Return loaned book to server
+	 *
+	 * @param loanID          Loan ID received during fulfill
+	 * @param operatorURL     URL of operator that loans this book
+	 */
+	void returnLoan(const std::string& loanID, const std::string& operatorURL);
+	
 	/**
 	 * @brief Create a new ADEPT environment (device.xml, devicesalt and activation.xml).
 	 *
@@ -218,6 +226,7 @@ namespace gourou
 	void operatorAuth(std::string operatorURL);
 	void buildFulfillRequest(pugi::xml_document& acsmDoc, pugi::xml_document& fulfillReq);
 	void buildActivateReq(pugi::xml_document& activateReq);
+	void buildReturnReq(pugi::xml_document& returnReq, const std::string& loanID, const std::string& operatorURL);
 	ByteArray sendFulfillRequest(const pugi::xml_document& document, const std::string& url);
 	void buildSignInRequest(pugi::xml_document& signInRequest, const std::string& adobeID, const std::string& adobePassword, const std::string& authenticationCertificate);
 	void fetchLicenseServiceCertificate(const std::string& licenseURL,

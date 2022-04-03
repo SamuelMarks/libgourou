@@ -837,6 +837,33 @@ namespace gourou
 	user->updateActivationFile(activationDoc);
     }
     
+    void DRMProcessor::buildReturnReq(pugi::xml_document& returnReq, const std::string& loanID, const std::string& operatorURL)
+    {
+	pugi::xml_node decl = returnReq.append_child(pugi::node_declaration);
+	decl.append_attribute("version") = "1.0";
+	
+	pugi::xml_node root = returnReq.append_child("adept:loanReturn");
+	root.append_attribute("xmlns:adept") = ADOBE_ADEPT_NS;
+
+	appendTextElem(root, "adept:user",      user->getUUID());
+	appendTextElem(root, "adept:device",    user->getDeviceUUID());
+	appendTextElem(root, "adept:loan",      loanID);
+
+	addNonce(root);
+	signNode(root);
+    }
+    
+    void DRMProcessor::returnLoan(const std::string& loanID, const std::string& operatorURL)
+    {
+	pugi::xml_document returnReq;
+
+	GOUROU_LOG(INFO, "Return loan " << loanID);
+
+	buildReturnReq(returnReq, loanID, operatorURL);
+
+	sendRequest(returnReq, operatorURL + "/LoanReturn");
+    }
+
     ByteArray DRMProcessor::encryptWithDeviceKey(const unsigned char* data, unsigned int len)
     {
 	const unsigned char* deviceKey = device->getDeviceKey();

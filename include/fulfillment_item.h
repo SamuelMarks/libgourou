@@ -20,7 +20,7 @@
 #ifndef _FULFILLMENT_ITEM_H_
 #define _FULFILLMENT_ITEM_H_
 
-#include "bytearray.h"
+#include "loan_token.h"
 
 #include <pugixml.hpp>
 
@@ -41,6 +41,8 @@ namespace gourou
 	 * @param user  User pointer
 	 */
 	FulfillmentItem(pugi::xml_document& doc, User* user);
+
+	~FulfillmentItem();
 
 	/**
 	 * @brief Return metadata value from ACSM metadata section
@@ -64,13 +66,19 @@ namespace gourou
 	 */
 	std::string getResource();
 
+	/**
+	 * @brief Return loan token if there is one
+	 */
+	LoanToken* getLoanToken();
+
     private:
 	pugi::xml_document fulfillDoc;
 	pugi::xml_node metadatas;
 	pugi::xml_document rights;
 	std::string downloadURL;
 	std::string resource;
-
+	LoanToken* loanToken;
+	
 	void buildRights(const pugi::xml_node& licenseToken, User* user);
     };
 }

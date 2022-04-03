@@ -24,7 +24,7 @@
 namespace gourou
 {
     FulfillmentItem::FulfillmentItem(pugi::xml_document& doc, User* user)
-	: fulfillDoc()
+	: fulfillDoc(), loanToken(0)
     {
 	fulfillDoc.reset(doc); /* We must keep a copy */
 	metadatas = fulfillDoc.select_node("//metadata").node();
@@ -50,8 +50,25 @@ namespace gourou
 	    EXCEPTION(FFI_INVALID_FULFILLMENT_DATA, "Any license token in document");
 	
 	buildRights(licenseToken, user);
+
+	node = doc.select_node("/envelope/fulfillmentResult/returnable").node();
+	try
+	{
+	    if (node && node.first_child().value() == std::string("true"))
+		loanToken = new LoanToken(doc);
+	}
+	catch(std::exception& e)
+	{
+	    GOUROU_LOG(ERROR, "Book is returnable, but contains invalid loan token");
+	    GOUROU_LOG(ERROR, e.what());
+	}
     }
-   
+
+    FulfillmentItem::~FulfillmentItem()
+    {
+	if (loanToken) delete loanToken;
+    }
+    
     void FulfillmentItem::buildRights(const pugi::xml_node& licenseToken, User* user)
     {
 	pugi::xml_node decl = rights.append_child(pugi::node_declaration);
@@ -102,5 +119,10 @@ namespace gourou
     std::string FulfillmentItem::getResource()
     {
 	return resource;
+    }
+
+    LoanToken* FulfillmentItem::getLoanToken()
+    {
+	return loanToken;
     }
 }
