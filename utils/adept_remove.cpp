@@ -114,16 +114,16 @@ public:
 		// Use temp file for PDF
 		if (type == gourou::DRMProcessor::ITEM_TYPE::PDF)
 		{
-		    char* tempFile = tempnam("/tmp", NULL);
-		    processor.removeDRM(inputFile, tempFile, type, encryptionKey, encryptionKeySize);
+		    std::string tempFile = filename + ".tmp";
+		    /* Be sure there is not already a temp file */
+		    unlink(tempFile.c_str());
+		    processor.removeDRM(filename, tempFile, type, encryptionKey, encryptionKeySize);
 		    /* Original file must be removed before doing a copy... */
-		    unlink(inputFile);
-		    if (!rename(tempFile, filename.c_str()))
+		    unlink(filename.c_str());
+		    if (rename(tempFile.c_str(), filename.c_str()))
 		    {
-			free(tempFile);
 			EXCEPTION(gourou::DRM_FILE_ERROR, "Unable to copy " << tempFile << " into " << filename);
 		    }
-		    free(tempFile);
 		}
 		else
 		    processor.removeDRM(inputFile, filename, type, encryptionKey, encryptionKeySize);
