@@ -31,10 +31,23 @@ namespace gourou
 
 	node = doc.select_node("/envelope/loanToken/loan").node();
 
-	if (!node)
-	    EXCEPTION(FFI_INVALID_LOAN_TOKEN, "No loanToken/loan element in document");
+	if (node)
+	    properties["id"] = node.first_child().value();
+	else
+	{
+	    node = doc.select_node("/envelope/fulfillmentResult/resourceItemInfo/licenseToken/permissions/display/loan").node();
 
-	properties["id"] = node.first_child().value();
+	    if (node)
+		properties["id"] = node.first_child().value();
+	    else
+	    {
+		node = doc.select_node("/envelope/fulfillmentResult/resourceItemInfo/licenseToken/permissions/play/loan").node();
+		if (node)
+		    properties["id"] = node.first_child().value();
+		else
+		    EXCEPTION(FFI_INVALID_LOAN_TOKEN, "No loanToken/loan element in document");
+	    }
+	}
 
 	node = doc.select_node("/envelope/loanToken/operatorURL").node();
 
@@ -50,6 +63,7 @@ namespace gourou
 	else
 	{
 	    node = doc.select_node("/envelope/fulfillmentResult/resourceItemInfo/licenseToken/permissions/play/until").node();
+
 	    if (node)
 		properties["validity"] = node.first_child().value();
 	    else
