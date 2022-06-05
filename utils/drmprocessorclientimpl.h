@@ -31,11 +31,18 @@
 
 #include <string>
 
+#if OPENSSL_VERSION_MAJOR >= 3
+#include <openssl/provider.h>
+#endif
+
 #include <drmprocessorclient.h>
 
 class DRMProcessorClientImpl : public gourou::DRMProcessorClient
 {
 public:
+    DRMProcessorClientImpl();
+    ~DRMProcessorClientImpl();
+    
     /* Digest interface */
     virtual void* createDigest(const std::string& digestName);
     virtual int digestUpdate(void* handler, unsigned char* data, unsigned int length);
@@ -118,6 +125,13 @@ public:
 	
     virtual void deflate(gourou::ByteArray& data, gourou::ByteArray& result,
 			 int wbits=-15, int compressionLevel=8);
+
+private:
+#if OPENSSL_VERSION_MAJOR >= 3
+    OSSL_PROVIDER *legacy, *deflt;
+#else
+    void *legacy, *deflt;
+#endif
 };
 
 #endif

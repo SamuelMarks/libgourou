@@ -35,6 +35,8 @@
 #include <openssl/pkcs12.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/rsa.h>
+#include <openssl/bn.h>
 
 #include <curl/curl.h>
 
@@ -44,6 +46,31 @@
 #include <libgourou_common.h>
 #include <libgourou_log.h>
 #include "drmprocessorclientimpl.h"
+
+DRMProcessorClientImpl::DRMProcessorClientImpl():
+    legacy(0), deflt(0)
+{
+#if OPENSSL_VERSION_MAJOR >= 3
+    legacy = OSSL_PROVIDER_load(NULL, "legacy");
+    if (!legacy)
+	EXCEPTION(gourou::CLIENT_OSSL_ERROR, "Error, OpenSSL legacy provider not available");
+
+    deflt = OSSL_PROVIDER_load(NULL, "default");
+    if (!deflt)
+	EXCEPTION(gourou::CLIENT_OSSL_ERROR, "Error, OpenSSL default provider not available");
+#endif
+}
+
+DRMProcessorClientImpl::~DRMProcessorClientImpl()
+{
+#if OPENSSL_VERSION_MAJOR >= 3
+    if (legacy)
+	OSSL_PROVIDER_unload(legacy);
+
+    if (deflt)
+	OSSL_PROVIDER_unload(deflt);
+#endif
+}
 
 /* Digest interface */
 void* DRMProcessorClientImpl::createDigest(const std::string& digestName)
@@ -289,7 +316,12 @@ void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsi
     pkcs12 = d2i_PKCS12(NULL, &RSAKey, RSAKeyLength);
     if (!pkcs12)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
+
     PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, &ca);
+
+    if (!pkey)
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
+
     rsa = EVP_PKEY_get1_RSA(pkey);
 
     int ret = RSA_private_encrypt(dataLength, data, res, rsa, RSA_PKCS1_PADDING);
@@ -412,6 +444,9 @@ void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, uns
     if (!pkcs12)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
     PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, &ca);
+
+    if (!cert)
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
 
     *certOutLength = i2d_X509(cert, certOut);
 
