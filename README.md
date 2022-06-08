@@ -104,6 +104,11 @@ To return a loaned book :
 You can get utils full options description with -h or --help switch
 
 
+Docker
+------
+
+A docker image (by bcliang) is available at [https://github.com/bcliang/docker-libgourou/](https://github.com/bcliang/docker-libgourou/)
+
 
 Copyright
 ---------
