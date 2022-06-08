@@ -60,7 +60,7 @@ libgourou.so: $(OBJECTS) $(UPDFPARSERLIB)
 	$(CXX) obj/*.o $(LDFLAGS) -o $@ -shared
 
 build_utils:
-	make -C utils ROOT=$(PWD) CXX=$(CXX) AR=$(AR) DEBUG=$(DEBUG) STATIC_UTILS=$(STATIC_UTILS)
+	make -C utils ROOT=$(PWD) CXX=$(CXX) AR=$(AR) DEBUG=$(DEBUG) STATIC_UTILS=$(STATIC_UTILS) OPENSSL3=$(OPENSSL3)
 
 clean:
 	rm -rf libgourou.a libgourou.so obj
