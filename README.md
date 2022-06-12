@@ -35,7 +35,15 @@ Dependencies
 
 For libgourou :
 
+_externals_ :
+
   * None
+
+_internals_ :
+
+  * PugiXML
+  * Base64
+  * uPDFParser
 
 For utils :
 
@@ -44,12 +52,18 @@ For utils :
   * libzip
 
 
+Internal libraries are automatically fetched and statically compiled during the first run.
+When you update libgourou's repository, **don't forget to update internal libraries** with :
+
+    make update_lib
+
+
 Compilation
 -----------
 
 Use _make_ command
 
-    make [CROSS=XXX] [DEBUG=(0*|1)] [STATIC_UTILS=(0*|1)] [BUILD_UTILS=(0|1*)] [BUILD_STATIC=(0*|1)] [BUILD_SHARED=(0|1*)]
+    make [CROSS=XXX] [DEBUG=(0*|1)] [STATIC_UTILS=(0*|1)] [BUILD_UTILS=(0|1*)] [BUILD_STATIC=(0*|1)] [BUILD_SHARED=(0|1*)] [all*|clean|ultraclean|build_utils]
 
 CROSS can define a cross compiler prefix (ie arm-linux-gnueabihf-)
 
@@ -116,14 +130,12 @@ Copyright
 Grégory Soutadé
 
 
-
 License
 -------
 
 libgourou : LGPL v3 or later
 
 utils     : BSD
-
 
 
 Special thanks
