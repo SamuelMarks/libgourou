@@ -45,6 +45,9 @@ lib:
 	mkdir lib
 	./scripts/setup.sh
 
+update_lib:
+	./scripts/update_lib.sh
+
 obj:
 	mkdir obj
 
