@@ -18,7 +18,7 @@
 */
 #include <string.h>
 
-#include <base64/Base64.h>
+#include <Base64.h>
 
 #include <bytearray.h>
 

@@ -4,7 +4,7 @@ CXX ?= $(CROSS)g++
 
 UPDFPARSERLIB = ./lib/updfparser/libupdfparser.a
 
-CXXFLAGS=-Wall -fPIC -I./include -I./lib -I./lib/pugixml/src/ -I./lib/updfparser/include
+CXXFLAGS=-Wall -fPIC -I./include -I./lib/pugixml/src/ -I./lib/updfparser/include
 LDFLAGS = $(UPDFPARSERLIB)
 
 BUILD_STATIC ?= 0

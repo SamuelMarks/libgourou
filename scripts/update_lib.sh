@@ -12,9 +12,6 @@ pushd lib/pugixml
 git pull origin latest
 popd
 
-# Base64
-# Nothing to do
-
 # uPDFParser
 pushd lib/updfparser
 git pull origin master
