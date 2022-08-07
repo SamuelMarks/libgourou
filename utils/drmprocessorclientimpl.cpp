@@ -124,7 +124,7 @@ static int downloadProgress(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
 			    curl_off_t ultotal, curl_off_t ulnow)
 {
 // For "big" files only
-    if (dltotal >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::WARN)
+    if (dltotal >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::LG_LOG_WARN)
     {
 	int percent = 0;
 	if (dltotal)
@@ -174,7 +174,7 @@ static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userda
 
 	(*responseHeaders)[key] = value;
     
-	if (gourou::logLevel >= gourou::DEBUG)
+	if (gourou::logLevel >= gourou::LG_LOG_DEBUG)
 	    std::cout << key << " : "  << value << std::endl;
     }
     
@@ -189,10 +189,10 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     if (!responseHeaders)
 	responseHeaders = &localHeaders;
     
-    GOUROU_LOG(gourou::INFO, "Send request to " << URL);
+    GOUROU_LOG(INFO, "Send request to " << URL);
     if (POSTData.size())
     {
-	GOUROU_LOG(gourou::DEBUG, "<<< " << std::endl << POSTData);
+	GOUROU_LOG(DEBUG, "<<< " << std::endl << POSTData);
     }
 
     unsigned prevDownloadedBytes;
@@ -202,11 +202,11 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	struct stat _stat;
 	if (!fstat(fd, &_stat))
 	{
-	    GOUROU_LOG(gourou::WARN, "Resume download @ " << _stat.st_size << " bytes");
+	    GOUROU_LOG(WARN, "Resume download @ " << _stat.st_size << " bytes");
 	    downloadedBytes = _stat.st_size;
 	}
 	else
-	    GOUROU_LOG(gourou::WARN, "Want to resume, but fstat failed");
+	    GOUROU_LOG(WARN, "Want to resume, but fstat failed");
     }
     
     CURL *curl = curl_easy_init();
@@ -262,7 +262,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	// Connexion failed, wait & retry
 	if (res == CURLE_COULDNT_CONNECT)
 	{
-	    GOUROU_LOG(gourou::WARN, "\nConnection failed, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);	    
+	    GOUROU_LOG(WARN, "\nConnection failed, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);	    
 	}
 	// Transfer failed but some data has been received
 	// --> try again without incrementing tries
@@ -270,11 +270,11 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	{
 	    if (prevDownloadedBytes != downloadedBytes)
 	    {
-		GOUROU_LOG(gourou::WARN, "\nConnection broken, but data received, try again");	    
+		GOUROU_LOG(WARN, "\nConnection broken, but data received, try again");	    
 		i--;
 	    }
 	    else
-		GOUROU_LOG(gourou::WARN, "\nConnection broken and no data received, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);
+		GOUROU_LOG(WARN, "\nConnection broken and no data received, attempt " << (i+1) << "/" << HTTP_REQ_MAX_RETRY);
 	}
 	// Other error --> fail
 	else
@@ -291,12 +291,12 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	EXCEPTION(gourou::CLIENT_NETWORK_ERROR, "Error " << curl_easy_strerror(res));
     
     if ((downloadedBytes >= DISPLAY_THRESHOLD || replyData.size() >= DISPLAY_THRESHOLD) &&
-	gourou::logLevel >= gourou::WARN)
+	gourou::logLevel >= gourou::LG_LOG_WARN)
 	std::cout << std::endl;
 
     if ((*responseHeaders)["Content-Type"] == "application/vnd.adobe.adept+xml")
     {
-	GOUROU_LOG(gourou::DEBUG, ">>> " << std::endl << replyData.data());
+	GOUROU_LOG(DEBUG, ">>> " << std::endl << replyData.data());
     }
 	
     return std::string((char*)replyData.data(), replyData.length());
@@ -360,7 +360,7 @@ void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsi
     if (ret < 0)
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 
-    if (gourou::logLevel >= gourou::DEBUG)
+    if (gourou::logLevel >= gourou::LG_LOG_DEBUG)
     {
 	printf("Decrypted : ");
 	for(int i=0; i<ret; i++)

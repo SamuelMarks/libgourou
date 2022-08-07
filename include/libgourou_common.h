@@ -140,7 +140,7 @@ namespace gourou
 	    std::stringstream msg;
 	    msg << "Exception code : 0x" << std::setbase(16) << code << std::endl;
 	    msg << "Message        : " << message << std::endl;
-	    if (logLevel >= DEBUG)
+	    if (logLevel >= LG_LOG_DEBUG)
 		msg << "File           : " << file << ":" << std::setbase(10) << line << std::endl;
 	    fullmessage = strdup(msg.str().c_str());
 	}

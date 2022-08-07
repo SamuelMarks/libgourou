@@ -37,7 +37,7 @@
 
 namespace gourou
 {
-    GOUROU_LOG_LEVEL logLevel = WARN;
+    GOUROU_LOG_LEVEL logLevel = LG_LOG_WARN;
     const std::string DRMProcessor::VERSION = LIBGOUROU_VERSION;
     
     DRMProcessor::DRMProcessor(DRMProcessorClient* client):client(client), device(0), user(0)
@@ -89,7 +89,7 @@ namespace gourou
 	uint16_t nlength = htons(length);
 	char c;
 
-	if (logLevel >= TRACE)
+	if (logLevel >= LG_LOG_TRACE)
 	    printf("%02x %02x ", ((uint8_t*)&nlength)[0], ((uint8_t*)&nlength)[1]);
 	
 	client->digestUpdate(sha_ctx, (unsigned char*)&nlength, sizeof(nlength));
@@ -98,17 +98,17 @@ namespace gourou
 	{
 	    c = string[i];
 	    client->digestUpdate(sha_ctx, (unsigned char*)&c, 1);
-	    if (logLevel >= TRACE)
+	    if (logLevel >= LG_LOG_TRACE)
 		printf("%c", c);
 	}
-	if (logLevel >= TRACE)
+	if (logLevel >= LG_LOG_TRACE)
 	    printf("\n");
     }
 
     void DRMProcessor::pushTag(void* sha_ctx, uint8_t tag)
     {
 	client->digestUpdate(sha_ctx, &tag, sizeof(tag));
-	if (logLevel >= TRACE)
+	if (logLevel >= LG_LOG_TRACE)
 	    printf("%02x ", tag);
     }
 
@@ -226,7 +226,7 @@ namespace gourou
 
 	client->digestFinalize(sha_ctx, sha_out);
 	
-	if (logLevel >= DEBUG)
+	if (logLevel >= LG_LOG_DEBUG)
 	{
 	    printf("\nSHA OUT : ");
 	    for(int i=0; i<(int)SHA1_LEN; i++)
@@ -252,7 +252,7 @@ namespace gourou
 	client->RSAPrivateEncrypt(privateRSAKey.data(), privateRSAKey.length(),
 				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
 				  sha_out, sizeof(sha_out), res);
-	if (logLevel >= DEBUG)
+	if (logLevel >= LG_LOG_DEBUG)
 	{
 	    printf("Sig : ");
 	    for(int i=0; i<(int)sizeof(res); i++)

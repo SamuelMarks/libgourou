@@ -24,16 +24,16 @@
 
 namespace gourou {
     enum GOUROU_LOG_LEVEL {
-	ERROR,
-	WARN,
-	INFO,
-	DEBUG,
-	TRACE
+	LG_LOG_ERROR,
+	LG_LOG_WARN,
+	LG_LOG_INFO,
+	LG_LOG_DEBUG,
+	LG_LOG_TRACE
     };
 
     extern GOUROU_LOG_LEVEL logLevel;
 
-#define GOUROU_LOG(__lvl, __msg) if (__lvl <= gourou::logLevel) {std::cout << __msg << std::endl << std::flush;}
+#define GOUROU_LOG(__lvl, __msg) if (gourou::LG_LOG_##__lvl <= gourou::logLevel) {std::cout << __msg << std::endl << std::flush;}
 #define GOUROU_LOG_FUNC() GOUROU_LOG(TRACE, __FUNCTION__ << "() @ " << __FILE__ << ":" << __LINE__)
 
     /**
