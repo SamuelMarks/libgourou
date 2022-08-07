@@ -24,7 +24,7 @@ endif
 
 
 ifneq ($(DEBUG),)
-CXXFLAGS += -ggdb -O0
+CXXFLAGS += -ggdb -O0 -DDEBUG
 else
 CXXFLAGS += -O2
 endif
