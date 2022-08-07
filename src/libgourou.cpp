@@ -282,7 +282,11 @@ namespace gourou
 	struct timeval tv;
 	gettimeofday(&tv, 0);
 	uint32_t nonce32[2] = {0x6f046000, 0x388a};
+#ifdef STATIC_NONCE
+	uint64_t bigtime = 0xAA001122BBCCAAULL;
+#else
 	uint64_t bigtime = tv.tv_sec*1000;
+#endif
 	nonce32[0] += (bigtime & 0xFFFFFFFF) + (tv.tv_usec/1000);
 	nonce32[1] += ((bigtime >> 32) & 0xFFFFFFFF);
 	

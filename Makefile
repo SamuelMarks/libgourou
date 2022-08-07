@@ -29,6 +29,10 @@ else
 CXXFLAGS += -O2
 endif
 
+ifneq ($(STATIC_NONCE),)
+CXXFLAGS += -DSTATIC_NONCE=1
+endif
+
 SRCDIR      := src
 INCDIR      := inc
 BUILDDIR    := obj
