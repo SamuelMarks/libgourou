@@ -127,6 +127,10 @@ public:
 			 int wbits=-15, int compressionLevel=8);
 
 private:
+
+    void padWithPKCS1(unsigned char* out, unsigned int outLength,
+		      const unsigned char* in, unsigned int inLength);
+    
 #if OPENSSL_VERSION_MAJOR >= 3
     OSSL_PROVIDER *legacy, *deflt;
 #else

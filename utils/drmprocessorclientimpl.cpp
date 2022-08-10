@@ -31,6 +31,8 @@
 #include <cctype>
 #include <locale>
 
+#define OPENSSL_NO_DEPRECATED 1
+
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
 #include <openssl/evp.h>
@@ -302,68 +304,110 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     return std::string((char*)replyData.data(), replyData.length());
 }
 
+void DRMProcessorClientImpl::padWithPKCS1(unsigned char* out, unsigned int outLength,
+					  const unsigned char* in, unsigned int inLength)
+{
+    if (outLength < (inLength + 3))
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, "Not enough space for PKCS1 padding");
+    
+    /*
+      PKCS1v5 Padding is :
+          0x00 0x01 0xff * n 0x00 dataIn
+    */
+    
+    memset(out, 0xFF, outLength);
+    
+    out[0] = 0x0;
+    out[1] = 0x1;
+    out[outLength - inLength - 1] = 0x00;
+    memcpy(&out[outLength - inLength], in, inLength);
+}
+
+
 void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
 					       const RSA_KEY_TYPE keyType, const std::string& password,
 					       const unsigned char* data, unsigned dataLength,
 					       unsigned char* res)
 {
     PKCS12 * pkcs12;
-    EVP_PKEY* pkey;
-    X509* cert;
-    STACK_OF(X509)* ca;
-    RSA * rsa;
-
+    EVP_PKEY_CTX *ctx;
+    EVP_PKEY* pkey = NULL;
+    size_t outlen;
+    unsigned char* tmp;
+    int ret;
+    
     pkcs12 = d2i_PKCS12(NULL, &RSAKey, RSAKeyLength);
     if (!pkcs12)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
 
-    PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, &ca);
-
-    if (!pkey)
+    if (PKCS12_parse(pkcs12, password.c_str(), &pkey, NULL, NULL) <= 0)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
 
-    rsa = EVP_PKEY_get1_RSA(pkey);
+    outlen = EVP_PKEY_get_size(pkey);
 
-    int ret = RSA_private_encrypt(dataLength, data, res, rsa, RSA_PKCS1_PADDING);
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
 
-    if (ret < 0)
+    /* Use RSA private key */
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 
-    if (gourou::logLevel >= gourou::DEBUG)
-    {
-	printf("Encrypted : ");
-	for(int i=0; i<ret; i++)
-	    printf("%02x ", res[i]);
-	printf("\n");
-    }
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_NO_PADDING) <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    tmp = (unsigned char*)malloc(outlen);
+
+    /* PKCS1 functions are no more exported */
+    padWithPKCS1(tmp, outlen, data, dataLength);
+   
+    ret = EVP_PKEY_decrypt(ctx, res, &outlen, tmp, outlen);
+
+    EVP_PKEY_CTX_free(ctx);
+    free(tmp);
+    
+    if (ret <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
-			    
+
 void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
 					       const RSA_KEY_TYPE keyType, const std::string& password,
 					       const unsigned char* data, unsigned dataLength,
 					       unsigned char* res)
 {
-    BIO* mem=BIO_new_mem_buf(RSAKey, RSAKeyLength);
+    BIO* mem = BIO_new_mem_buf(RSAKey, RSAKeyLength);
     PKCS8_PRIV_KEY_INFO* p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
 
     if (!p8inf)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS8, ERR_error_string(ERR_get_error(), NULL));
-
+   
+    EVP_PKEY_CTX *ctx;
     EVP_PKEY* pkey = EVP_PKCS82PKEY(p8inf);
-    RSA * rsa;
+    size_t outlen = dataLength;
     int ret;
 
-    rsa = EVP_PKEY_get1_RSA(pkey);
+    if (!pkey)
+	EXCEPTION(gourou::CLIENT_INVALID_PKCS8, ERR_error_string(ERR_get_error(), NULL));
 
-    ret = RSA_private_decrypt(dataLength, data, res, rsa, RSA_NO_PADDING);
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
 
-    if (ret < 0)
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_NO_PADDING) <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    ret = EVP_PKEY_decrypt(ctx, res, &outlen, data, dataLength);
+
+    PKCS8_PRIV_KEY_INFO_free(p8inf);
+    EVP_PKEY_CTX_free(ctx);
+    BIO_free(mem);
+
+    if (ret <= 0)
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 
     if (gourou::logLevel >= gourou::LG_LOG_DEBUG)
     {
 	printf("Decrypted : ");
-	for(int i=0; i<ret; i++)
+	for(int i=0; i<(int)outlen; i++)
 	    printf("%02x ", res[i]);
 	printf("\n");
     }
@@ -374,61 +418,79 @@ void DRMProcessorClientImpl::RSAPublicEncrypt(const unsigned char* RSAKey, unsig
 					      const unsigned char* data, unsigned dataLength,
 					      unsigned char* res)
 {
+    size_t outlen;
+
     X509 * x509 = d2i_X509(0, &RSAKey, RSAKeyLength);
     if (!x509)
 	EXCEPTION(gourou::CLIENT_INVALID_CERTIFICATE, "Invalid certificate");
 	
+    EVP_PKEY_CTX *ctx;
     EVP_PKEY * evpKey = X509_get_pubkey(x509);
-    RSA* rsa = EVP_PKEY_get1_RSA(evpKey);
-    EVP_PKEY_free(evpKey);
 
-    if (!rsa)
-	EXCEPTION(gourou::CLIENT_NO_PRIV_KEY, "No private key in certificate");
+    if (!evpKey)
+	EXCEPTION(gourou::CLIENT_NO_PUB_KEY, "No public key in certificate");
 
-    int ret = RSA_public_encrypt(dataLength, data, res, rsa, RSA_PKCS1_PADDING);
+    ctx = EVP_PKEY_CTX_new(evpKey, NULL);
+
+    if (EVP_PKEY_encrypt_init(ctx) <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0)
+	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    int ret = EVP_PKEY_encrypt(ctx, res, &outlen, data, dataLength);
+
+    EVP_PKEY_CTX_free(ctx);
+    
     if (ret < 0)
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
+
+    EVP_PKEY_free(evpKey);
 }
 
 void* DRMProcessorClientImpl::generateRSAKey(int keyLengthBits)
 {
     BIGNUM * bn = BN_new();
-    RSA * rsa = RSA_new();
-    BN_set_word(bn, 0x10001);
-    RSA_generate_key_ex(rsa, keyLengthBits, bn, 0);
-    BN_free(bn);
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+    EVP_PKEY *key = NULL;
 
-    return rsa;
+    BN_set_word(bn, 0x10001);
+
+    EVP_PKEY_keygen_init(ctx);
+
+    EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, keyLengthBits);
+    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING);
+    EVP_PKEY_CTX_set1_rsa_keygen_pubexp(ctx, bn);
+    EVP_PKEY_keygen(ctx, &key);
+
+    EVP_PKEY_CTX_free(ctx);
+    BN_free(bn);
+    
+    return key;
 }
 
 void DRMProcessorClientImpl::destroyRSAHandler(void* handler)
 {
-    RSA_free((RSA*)handler);
+    free(handler);
 }
 
 void DRMProcessorClientImpl::extractRSAPublicKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength)
 {
-    EVP_PKEY * evpKey = EVP_PKEY_new();
-    EVP_PKEY_set1_RSA(evpKey, (RSA*)handler);
     X509_PUBKEY *x509_pubkey = 0;
-    X509_PUBKEY_set(&x509_pubkey, evpKey);
+    X509_PUBKEY_set(&x509_pubkey, (EVP_PKEY*)handler);
 
     *keyOutLength = i2d_X509_PUBKEY(x509_pubkey, keyOut);
 
     X509_PUBKEY_free(x509_pubkey);
-    EVP_PKEY_free(evpKey);
 }
 
 void DRMProcessorClientImpl::extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength)
 {
-    EVP_PKEY * evpKey = EVP_PKEY_new();
-    EVP_PKEY_set1_RSA(evpKey, (RSA*)handler);
-    PKCS8_PRIV_KEY_INFO * privKey = EVP_PKEY2PKCS8(evpKey);
+    PKCS8_PRIV_KEY_INFO * privKey = EVP_PKEY2PKCS8((EVP_PKEY*)handler);
 
     *keyOutLength = i2d_PKCS8_PRIV_KEY_INFO(privKey, keyOut);
 
     PKCS8_PRIV_KEY_INFO_free(privKey);
-    EVP_PKEY_free(evpKey);
 }
 				 
 void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
@@ -438,12 +500,11 @@ void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, uns
     PKCS12 * pkcs12;
     EVP_PKEY* pkey = 0;
     X509* cert = 0;
-    STACK_OF(X509)* ca;
 
     pkcs12 = d2i_PKCS12(NULL, &RSAKey, RSAKeyLength);
     if (!pkcs12)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));
-    PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, &ca);
+    PKCS12_parse(pkcs12, password.c_str(), &pkey, &cert, NULL);
 
     if (!cert)
 	EXCEPTION(gourou::CLIENT_INVALID_PKCS12, ERR_error_string(ERR_get_error(), NULL));

@@ -3,16 +3,6 @@ TARGETS=acsmdownloader adept_activate adept_remove adept_loan_mgt
 
 CXXFLAGS=-Wall -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
 
-LDFLAGS=
-
-ifneq ($(OPENSSL3),)
-# OpenSSL 1.1.0 compat
-CXXFLAGS += -DOPENSSL_API_COMPAT=0x10100000L
-CXXFLAGS += -I/tmp/openssl3/usr/include/ -I/tmp/openssl3/usr/include/x86_64-linux-gnu
-LDFLAGS += -L/tmp/openssl3/usr/lib/x86_64-linux-gnu -L/tmp/openssl3/usr/lib/x86_64-linux-gnu/ossl-modules
-endif
-
-
 STATIC_DEP=
 LDFLAGS += -L$(ROOT) -lcrypto -lzip -lz -lcurl
 
