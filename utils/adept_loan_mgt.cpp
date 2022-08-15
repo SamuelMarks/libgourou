@@ -336,7 +336,7 @@ static void usage(const char* cmd)
 {
     std::cout << "Manage loaned books" << std::endl;
     
-    std::cout << "Usage: " << cmd << " [(-d|--activation-dir) dir] (-l|--list)|(-D|--delete loanID)|(-R|--delete loanID) [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
+    std::cout << "Usage: " << basename((char*)cmd) << " [(-d|--activation-dir) dir] (-l|--list)|(-D|--delete loanID)|(-R|--delete loanID) [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
     
     std::cout << "  " << "-d|--activation-dir"  << "\t"   << "Directory of device.xml/activation.xml and device key" << std::endl;
     std::cout << "  " << "-l|--list"            << "\t\t" << "List all loaned books" << std::endl;

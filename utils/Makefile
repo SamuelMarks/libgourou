@@ -1,5 +1,5 @@
 
-TARGETS=acsmdownloader adept_activate adept_remove adept_loan_mgt
+TARGETS=acsmdownloader adept_activate adept_remove adept_loan_mgt launcher
 
 CXXFLAGS=-Wall -fPIC -I$(ROOT)/include -I$(ROOT)/lib/pugixml/src/
 
@@ -29,16 +29,7 @@ ${COMMON_LIB}: ${COMMON_DEPS} ${STATIC_DEP}
 	$(CXX) $(CXXFLAGS) ${COMMON_DEPS} $(LDFLAGS) -c
 	$(AR) crs $@ ${COMMON_OBJECTS} $(STATIC_DEP)
 
-acsmdownloader: acsmdownloader.cpp ${COMMON_LIB}
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-adept_activate: adept_activate.cpp ${COMMON_LIB}
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-adept_remove: adept_remove.cpp ${COMMON_LIB}
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-adept_loan_mgt: adept_loan_mgt.cpp ${COMMON_LIB}
+%: %.cpp ${COMMON_LIB}
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:

@@ -143,7 +143,7 @@ static void usage(const char* cmd)
 {
     std::cout << "Remove ADEPT DRM (from Adobe) of EPUB/PDF file" << std::endl;
     
-    std::cout << "Usage: " << cmd << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-v|--verbose)] [(-h|--help)] (-f|--input-file) file(.epub|pdf)" << std::endl << std::endl;
+    std::cout << "Usage: " << basename((char*)cmd) << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-v|--verbose)] [(-h|--help)] (-f|--input-file) file(.epub|pdf)" << std::endl << std::endl;
     
     std::cout << "  " << "-d|--device-file"     << "\t"   << "device.xml file from eReader" << std::endl;
     std::cout << "  " << "-a|--activation-file" << "\t"   << "activation.xml file from eReader" << std::endl;
