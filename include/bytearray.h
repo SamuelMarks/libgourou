@@ -105,6 +105,13 @@ namespace gourou
 	std::string toBase64();
 
 	/**
+	 * @brief Convert hex string into bytes
+	 *
+	 * @param str     Hex string
+	 */
+	static ByteArray fromHex(const std::string& str);
+
+	/**
 	 * @brief Return a string with human readable hex encoded internal data
 	 */
 	std::string toHex();
@@ -130,7 +137,7 @@ namespace gourou
 	void append(const std::string& str);
 
 	/**
-	 * @brief Get internal data. Must bot be freed
+	 * @brief Get internal data. Must not be freed
 	 */
 	unsigned char* data() {return _data;}
 

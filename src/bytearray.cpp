@@ -17,6 +17,7 @@
   along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
 #include <string.h>
+#include <stdexcept>
 
 #include <Base64.h>
 
@@ -155,6 +156,47 @@ namespace gourou
 	return macaron::Base64::Encode(std::string((char*)_data, _length));
     }
 
+    ByteArray ByteArray::fromHex(const std::string& str)
+    {
+	if (str.size() % 2)
+	    throw std::invalid_argument("Size of hex string not multiple of 2");
+
+	ByteArray res((unsigned int)(str.size()/2));
+	unsigned int i;
+
+	unsigned char* data = res.data();
+	unsigned char cur, tmp;
+	
+	for (i=0; i<str.size(); i+=2)
+	{
+	    cur = 0;
+
+	    tmp = str[i];
+	    if (tmp >= 'a' && tmp <= 'f')
+		cur = (tmp - 'a' + 10) << 4;
+	    else if (tmp >= 'A' && tmp <= 'F')
+		cur = (tmp - 'A' + 10) << 4;
+	    else if (tmp >= '0' && tmp <= '9')
+		cur = (tmp - '0') << 4;
+	    else
+		throw std::invalid_argument("Invalid character in hex string");
+
+	    tmp = str[i+1];
+	    if (tmp >= 'a' && tmp <= 'f')
+		cur += tmp - 'a' + 10;
+	    else if (tmp >= 'A' && tmp <= 'F')
+		cur += tmp - 'A' + 10;
+	    else if (tmp >= '0' && tmp <= '9')
+		cur += tmp - '0';
+	    else
+		throw std::invalid_argument("Invalid character in hex string");
+
+	    data[i/2] = cur;
+	}
+	
+	return res;
+    }
+    
     std::string ByteArray::toHex()
     {
 	char* tmp = new char[_length*2+1];
