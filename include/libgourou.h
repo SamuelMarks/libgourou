@@ -231,6 +231,7 @@ namespace gourou
 	void buildSignInRequest(pugi::xml_document& signInRequest, const std::string& adobeID, const std::string& adobePassword, const std::string& authenticationCertificate);
 	void fetchLicenseServiceCertificate(const std::string& licenseURL,
 					    const std::string& operatorURL);
+	std::string encryptedKeyFirstPass(pugi::xml_document& rightsDoc, const std::string& encryptedKey, const std::string& keyType);
 	void decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey);
 	void removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut, const unsigned char* encryptionKey, unsigned encryptionKeySize);
 	void generatePDFObjectKey(int version,

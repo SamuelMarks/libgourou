@@ -126,7 +126,8 @@ namespace gourou
 	DRM_FORMAT_NOT_SUPPORTED,
 	DRM_IN_OUT_EQUALS,
 	DRM_MISSING_PARAMETER,
-	DRM_INVALID_KEY_SIZE
+	DRM_INVALID_KEY_SIZE,
+	DRM_ERR_ENCRYPTION_KEY_FP
     };
 
     /**
@@ -225,35 +226,9 @@ namespace gourou
      * It can throw an exception if tag does not exists
      * or just return an empty value
      */
-    static inline std::string extractTextElem(const pugi::xml_document& doc, const char* tagName, bool throwOnNull=true)
+    static inline std::string extractTextElem(const pugi::xml_node& root, const char* tagName, bool throwOnNull=true)
     {
-        pugi::xpath_node xpath_node = doc.select_node(tagName);
-
-        if (!xpath_node)
-	{
-	    if (throwOnNull)
-		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Tag " << tagName << " not found");
-	    
-            return "";
-	}
-
-	pugi::xml_node node = xpath_node.node().first_child();
-
-	if (!node)
-	{
-	    if (throwOnNull)
-		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Text element for tag " << tagName << " not found");
-	    
-            return "";
-	}
-
-	std::string res = node.value();
-        return trim(res);
-    }
-
-    static inline std::string extractTextElem(const pugi::xml_node& doc, const char* tagName, bool throwOnNull=true)
-    {
-        pugi::xpath_node xpath_node = doc.select_node(tagName);
+        pugi::xpath_node xpath_node = root.select_node(tagName);
 
         if (!xpath_node)
 	{
@@ -278,6 +253,37 @@ namespace gourou
     }
 
     /**
+     * @brief Extract text attribute from tag in document
+     * It can throw an exception if attribute does not exists
+     * or just return an empty value
+     */
+    static inline std::string extractTextAttribute(const pugi::xml_node& root, const char* tagName, const char* attributeName, bool throwOnNull=true)
+    {
+        pugi::xpath_node xpath_node = root.select_node(tagName);
+
+        if (!xpath_node)
+	{
+	    if (throwOnNull)
+		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Tag " << tagName << " not found");
+	    
+            return "";
+	}
+
+	pugi::xml_attribute attr = xpath_node.node().attribute(attributeName);
+
+	if (!attr)
+	{
+	    if (throwOnNull)
+		EXCEPTION(GOUROU_TAG_NOT_FOUND, "Attribute element " << attributeName << " for tag " << tagName << " not found");
+	    
+            return "";
+	}
+
+	std::string res = attr.value();
+	return trim(res);
+    }
+
+    /**
      * @brief Append an element to root with a sub text element
      *
      * @param root  Root node where to put child
@@ -290,6 +296,29 @@ namespace gourou
 	node.append_child(pugi::node_pcdata).set_value(value.c_str());
     }
 
+    /**
+     * Remove "urn:uuid:" prefix and all '-' from uuid
+     * urn:uuid:9cb786e8-586a-4950-8901-fff8d2ee6025
+     * ->
+     * 9cb786e8586a49508901fff8d2ee6025
+     */
+    static inline std::string extractIdFromUUID(const std::string& uuid)
+    {
+	unsigned int i = 0;
+	std::string res;
+	
+	if (uuid.find("urn:uuid:") == 0)
+	    i = 9;
+
+	for(; i<uuid.size(); i++)
+	{
+	    if (uuid[i] != '-')
+		res += uuid[i];
+	}
+
+	return res;
+    }
+    
     /**
      * @brief Open a file descriptor on path. If it already exists and truncate == true, it's truncated
      *

@@ -111,6 +111,7 @@ namespace gourou
     public:
 	enum RSA_KEY_TYPE {
 	    RSA_KEY_PKCS12 = 0,
+	    RSA_KEY_PKCS8,
 	    RSA_KEY_X509
 	};
 

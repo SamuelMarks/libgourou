@@ -33,6 +33,6 @@ ${COMMON_LIB}: ${COMMON_DEPS} ${STATIC_DEP}
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm -f $(TARGETS)
+	rm -f $(TARGETS) $(COMMON_LIB)
 
 ultraclean: clean

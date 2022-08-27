@@ -945,28 +945,95 @@ namespace gourou
     void DRMProcessor::setLogLevel(int logLevel) {gourou::logLevel = (GOUROU_LOG_LEVEL)logLevel;}
 
     void DRMProcessor::decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey)
-    {
+    {	
 	if (encryptedKey.size() != 172)
 	    EXCEPTION(DRM_INVALID_KEY_SIZE, "Invalid encrypted key size (" << encryptedKey.size() << "). DRM version not supported");
-	    
+
 	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
 
-	
 	std::string privateKeyData = user->getPrivateLicenseKey();
 	ByteArray privateRSAKey = ByteArray::fromBase64(privateKeyData);
-
-	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
-	std::string pkcs12 = user->getPKCS12();
 	
-	client->RSAPrivateDecrypt(privateRSAKey.data(), privateRSAKey.length(),
-				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
-				  arrayEncryptedKey.data(), arrayEncryptedKey.length(), decryptedKey);
+	dumpBuffer(gourou::LG_LOG_DEBUG, "To decrypt : ", arrayEncryptedKey.data(), arrayEncryptedKey.length());
 
-	if (decryptedKey[0] != 0x00 || decryptedKey[1] != 0x02 ||
-	    decryptedKey[RSA_KEY_SIZE-16-1] != 0x00)
-	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
+	client->RSAPrivateDecrypt(privateRSAKey.data(), privateRSAKey.length(),
+				  RSAInterface::RSA_KEY_PKCS8, "",
+				  arrayEncryptedKey.data(), arrayEncryptedKey.length(), decryptedKey);
     }
 
+    /**
+     * RSA Key can be over encrypted with AES128-CBC if keyType attribute is set
+     * Key = SHA256(keyType)[14:22] || SHA256(keyType)[7:13]
+     * IV = DeviceID ^ FulfillmentId ^ VoucherId
+     *
+     * @return Base64 encoded decrypted key
+     */
+    std::string DRMProcessor::encryptedKeyFirstPass(pugi::xml_document& rightsDoc, const std::string& encryptedKey, const std::string& keyType)
+    {
+	unsigned char digest[32], key[16], iv[16];
+	unsigned int dataOutLength;
+	std::string id;
+		
+	client->digest("SHA256", (unsigned char*)keyType.c_str(), keyType.size(), digest);
+	memcpy(key, &digest[14], 9);
+	memcpy(&key[9], &digest[7], 7);
+
+	id = extractTextElem(rightsDoc, "/adept:rights/licenseToken/device");
+	if (id == "")
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY_FP, "Device id not found in rights.xml");
+	ByteArray deviceId = ByteArray::fromHex(extractIdFromUUID(id));
+	unsigned char* _deviceId = deviceId.data();
+		
+	id = extractTextElem(rightsDoc, "/adept:rights/licenseToken/fulfillment");
+	if (id == "")
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY_FP, "Fulfillment id not found in rights.xml");
+	ByteArray fulfillmentId = ByteArray::fromHex(extractIdFromUUID(id));
+	unsigned char* _fulfillmentId = fulfillmentId.data();
+		
+	id = extractTextElem(rightsDoc, "/adept:rights/licenseToken/voucher");
+	if (id == "")
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY_FP, "Voucher id not found in rights.xml");
+	ByteArray voucherId = ByteArray::fromHex(extractIdFromUUID(id));
+	unsigned char* _voucherId = voucherId.data();
+		
+	if (deviceId.size() < sizeof(iv) || fulfillmentId.size() < sizeof(iv) || voucherId.size() < sizeof(iv))
+	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY_FP, "One id has a bad length");
+
+	for(unsigned int i=0; i<sizeof(iv); i++)
+	    iv[i] = _deviceId[i] ^ _fulfillmentId[i] ^ _voucherId[i];
+
+	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
+		
+	dumpBuffer(gourou::LG_LOG_DEBUG, "First pass key : ", key, sizeof(key));
+	dumpBuffer(gourou::LG_LOG_DEBUG, "First pass IV  : ", iv, sizeof(iv));
+
+	unsigned char* clearRSAKey = new unsigned char[arrayEncryptedKey.size()];
+	
+	client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+			(const unsigned char*)key, (unsigned int)sizeof(key),
+			(const unsigned char*)iv, (unsigned int)sizeof(iv),
+			(const unsigned char*)arrayEncryptedKey.data(), arrayEncryptedKey.size(),
+			(unsigned char*)clearRSAKey, &dataOutLength);
+
+	dumpBuffer(gourou::LG_LOG_DEBUG, "\nDecrypted key : ", clearRSAKey, dataOutLength);
+
+	/* Last block could be 0x10*16 which is OpenSSL padding, remove it if it's the case */
+	bool skipLastLine = true;
+	for(unsigned int i=dataOutLength-16; i<dataOutLength; i++)
+	{
+	    if (clearRSAKey[i] != 0x10)
+	    {
+		skipLastLine = false;
+		break;
+	    }
+	}
+
+	ByteArray res(clearRSAKey, (skipLastLine)?dataOutLength-16:dataOutLength);
+
+	delete[] clearRSAKey;
+
+	return res.toBase64();
+    }
     
     void DRMProcessor::removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut,
 				     const unsigned char* encryptionKey, unsigned encryptionKeySize)
@@ -983,7 +1050,20 @@ namespace gourou
 	unsigned char decryptedKey[RSA_KEY_SIZE];
 
 	if (!encryptionKey)
+	{
+	    std::string keyType = extractTextAttribute(rightsDoc, "/adept:rights/licenseToken/encryptedKey", "keyType", false);
+
+	    if (keyType != "")
+		encryptedKey = encryptedKeyFirstPass(rightsDoc, encryptedKey, keyType);
+	    
 	    decryptADEPTKey(encryptedKey, decryptedKey);
+
+	    dumpBuffer(gourou::LG_LOG_DEBUG, "Decrypted : ", decryptedKey, RSA_KEY_SIZE);
+
+	    if (decryptedKey[0] != 0x00 || decryptedKey[1] != 0x02 ||
+		decryptedKey[RSA_KEY_SIZE-16-1] != 0x00)
+		EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
+	}
 	else
 	{
 	    GOUROU_LOG(DEBUG, "Use provided encryption key");
