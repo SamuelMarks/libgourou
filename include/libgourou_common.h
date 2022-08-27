@@ -415,6 +415,20 @@ namespace gourou
 	}
 	return 0;
     }
+
+    static inline void dumpBuffer(GOUROU_LOG_LEVEL level, const char* title, const unsigned char* data, unsigned int len)
+    {
+	if (gourou::logLevel < level)
+	    return;
+	
+	printf("%s", title);
+	for(unsigned int i=0; i<len; i++)
+	{
+	    if (i && !(i%16)) printf("\n");
+	    printf("%02x ", data[i]);
+	}
+	printf("\n");	
+    }
 }
 
 #endif

@@ -46,7 +46,6 @@
 #include <zip.h>
 
 #include <libgourou_common.h>
-#include <libgourou_log.h>
 #include "drmprocessorclientimpl.h"
 
 DRMProcessorClientImpl::DRMProcessorClientImpl():
@@ -403,14 +402,6 @@ void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsi
 
     if (ret <= 0)
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
-
-    if (gourou::logLevel >= gourou::LG_LOG_DEBUG)
-    {
-	printf("Decrypted : ");
-	for(int i=0; i<(int)outlen; i++)
-	    printf("%02x ", res[i]);
-	printf("\n");
-    }
 }
 
 void DRMProcessorClientImpl::RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,

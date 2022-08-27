@@ -226,14 +226,7 @@ namespace gourou
 
 	client->digestFinalize(sha_ctx, sha_out);
 	
-	if (logLevel >= LG_LOG_DEBUG)
-	{
-	    printf("\nSHA OUT : ");
-	    for(int i=0; i<(int)SHA1_LEN; i++)
-		printf("%02x ", sha_out[i]);
-	    printf("\n");
-
-	}
+	dumpBuffer(gourou::LG_LOG_DEBUG, "\nSHA OUT : ", sha_out, SHA1_LEN);
     }
 
     void DRMProcessor::signNode(pugi::xml_node& rootNode)
@@ -252,13 +245,8 @@ namespace gourou
 	client->RSAPrivateEncrypt(privateRSAKey.data(), privateRSAKey.length(),
 				  RSAInterface::RSA_KEY_PKCS12, deviceKey.toBase64().data(),
 				  sha_out, sizeof(sha_out), res);
-	if (logLevel >= LG_LOG_DEBUG)
-	{
-	    printf("Sig : ");
-	    for(int i=0; i<(int)sizeof(res); i++)
-		printf("%02x ", res[i]);
-	    printf("\n");
-	}
+	
+	dumpBuffer(gourou::LG_LOG_DEBUG, "Sig : ", res, sizeof(res));
 
 	std::string signature = ByteArray(res, sizeof(res)).toBase64();
 	appendTextElem(rootNode, "adept:signature", signature);
