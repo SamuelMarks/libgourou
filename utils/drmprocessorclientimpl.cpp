@@ -82,32 +82,32 @@ void* DRMProcessorClientImpl::createDigest(const std::string& digestName)
     if (EVP_DigestInit(md_ctx, md) != 1)
     {
 	EVP_MD_CTX_free(md_ctx);
-	return 0;
+	EXCEPTION(gourou::CLIENT_DIGEST_ERROR, ERR_error_string(ERR_get_error(), NULL));
     }
 
     return md_ctx;
 }
 
-int DRMProcessorClientImpl::digestUpdate(void* handler, unsigned char* data, unsigned int length)
+void DRMProcessorClientImpl::digestUpdate(void* handler, unsigned char* data, unsigned int length)
 {
-    return (EVP_DigestUpdate((EVP_MD_CTX *)handler, data, length)) ? 0 : -1;
+    if (EVP_DigestUpdate((EVP_MD_CTX *)handler, data, length) != 1)
+	EXCEPTION(gourou::CLIENT_DIGEST_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-int DRMProcessorClientImpl::digestFinalize(void* handler, unsigned char* digestOut)
+void DRMProcessorClientImpl::digestFinalize(void* handler, unsigned char* digestOut)
 {
     int res = EVP_DigestFinal((EVP_MD_CTX *)handler, digestOut, NULL);
     EVP_MD_CTX_free((EVP_MD_CTX *)handler);
-    return (res == 1) ? 0 : -1;
+
+    if (res <= 0)
+	EXCEPTION(gourou::CLIENT_DIGEST_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-int DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut)
+void DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut)
 {
     void* handler = createDigest(digestName);
-    if (!handler)
-	return -1;
-    if (digestUpdate(handler, data, length))
-	return -1;
-    return digestFinalize(handler, digestOut);
+    digestUpdate(handler, data, length);
+    digestFinalize(handler, digestOut);
 }
 
 /* Random interface */
@@ -506,24 +506,27 @@ void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, uns
 }
 
 /* Crypto interface */
-void DRMProcessorClientImpl::Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+void DRMProcessorClientImpl::encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 				     const unsigned char* key, unsigned int keyLength,
 				     const unsigned char* iv, unsigned int ivLength,
 				     const unsigned char* dataIn, unsigned int dataInLength,
 				     unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    void* handler = EncryptInit(algo, chaining, key, keyLength, iv, ivLength);
-    EncryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
-    EncryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
+    void* handler = encryptInit(algo, chaining, key, keyLength, iv, ivLength);
+    encryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
+    encryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
 }
 
-void* DRMProcessorClientImpl::EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+void* DRMProcessorClientImpl::encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 					  const unsigned char* key, unsigned int keyLength,
 					  const unsigned char* iv, unsigned int ivLength)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-
-    if (algo == ALGO_AES)
+    int ret = 0;
+    
+    switch (algo)
+    {
+    case ALGO_AES:
     {
 	switch(keyLength)
 	{
@@ -531,10 +534,10 @@ void* DRMProcessorClientImpl::EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaini
 	    switch(chaining)
 	    {
 	    case CHAIN_ECB:
-		EVP_EncryptInit(ctx, EVP_aes_128_ecb(), key, iv);
+		ret = EVP_EncryptInit(ctx, EVP_aes_128_ecb(), key, iv);
 		break;
 	    case CHAIN_CBC:
-		EVP_EncryptInit(ctx, EVP_aes_128_cbc(), key, iv);
+		ret = EVP_EncryptInit(ctx, EVP_aes_128_cbc(), key, iv);
 		break;
 	    default:
 		EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
@@ -544,98 +547,134 @@ void* DRMProcessorClientImpl::EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaini
 	    EVP_CIPHER_CTX_free(ctx);
 	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
 	}
+	break;
     }
-    else if (algo == ALGO_RC4)
+    case ALGO_RC4:
     {
 	if (keyLength != 16)
 	{
 	    EVP_CIPHER_CTX_free(ctx);
 	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
 	}
-	EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+	ret = EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+	break;
     }
-    return ctx;
-}
-
-void* DRMProcessorClientImpl::DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-					     const unsigned char* key, unsigned int keyLength,
-					     const unsigned char* iv, unsigned int ivLength)
-{
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-
-    if (algo == ALGO_AES)
-    {
-	switch(keyLength)
-	{
-	case 16:
-	    switch(chaining)
-	    {
-	    case CHAIN_ECB:
-		EVP_DecryptInit(ctx, EVP_aes_128_ecb(), key, iv);
-		break;
-	    case CHAIN_CBC:
-		EVP_DecryptInit(ctx, EVP_aes_128_cbc(), key, iv);
-		break;
-	    default:
-		EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
-	    }
-	    break;
-	default:
-	    EVP_CIPHER_CTX_free(ctx);
-	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
-	}
     }
-    else if (algo == ALGO_RC4)
+    
+    if (ret <= 0)
     {
-	if (keyLength != 16)
-	{
-	    EVP_CIPHER_CTX_free(ctx);
-	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
-	}
-	EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+	EVP_CIPHER_CTX_free(ctx);
+	EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
     }
     
     return ctx;
 }
 
-void DRMProcessorClientImpl::EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+void* DRMProcessorClientImpl::decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+					     const unsigned char* key, unsigned int keyLength,
+					     const unsigned char* iv, unsigned int ivLength)
+{
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    int ret = 0;
+    
+    switch(algo)
+    {
+    case ALGO_AES:
+    {
+	switch(keyLength)
+	{
+	case 16:
+	    switch(chaining)
+	    {
+	    case CHAIN_ECB:
+		ret = EVP_DecryptInit(ctx, EVP_aes_128_ecb(), key, iv);
+		break;
+	    case CHAIN_CBC:
+		ret = EVP_DecryptInit(ctx, EVP_aes_128_cbc(), key, iv);
+		break;
+	    default:
+		EXCEPTION(gourou::CLIENT_BAD_CHAINING, "Unknown chaining mode " << chaining);
+	    }
+	    break;
+	default:
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
+	}
+	break;
+    }
+    case ALGO_RC4:
+    {
+	if (keyLength != 16)
+	{
+	    EVP_CIPHER_CTX_free(ctx);
+	    EXCEPTION(gourou::CLIENT_BAD_KEY_SIZE, "Invalid key size " << keyLength);
+	}
+	ret = EVP_DecryptInit(ctx, EVP_rc4(), key, iv);
+	break;
+    }
+    }
+    
+    if (ret <= 0)
+    {
+	EVP_CIPHER_CTX_free(ctx);
+	EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
+    }
+
+    return ctx;
+}
+
+void DRMProcessorClientImpl::encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 					   unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    EVP_EncryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
+    int ret = EVP_EncryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
+
+   if (ret <= 0)
+       EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::EncryptFinalize(void* handler,
+void DRMProcessorClientImpl::encryptFinalize(void* handler,
 					     unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    int len;
-    EVP_EncryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
+    int len, ret;
+    
+    ret = EVP_EncryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
     *dataOutLength += len;
     EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)handler);
+
+   if (ret <= 0)
+       EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+void DRMProcessorClientImpl::decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 				     const unsigned char* key, unsigned int keyLength,
 				     const unsigned char* iv, unsigned int ivLength,
 				     const unsigned char* dataIn, unsigned int dataInLength,
 				     unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    void* handler = DecryptInit(algo, chaining, key, keyLength, iv, ivLength);
-    DecryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
-    DecryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
+    void* handler = decryptInit(algo, chaining, key, keyLength, iv, ivLength);
+    decryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
+    decryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
 }
 
-void DRMProcessorClientImpl::DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+void DRMProcessorClientImpl::decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 					   unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    EVP_DecryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
+    int ret = EVP_DecryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
+
+    if (ret <= 0)
+       EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength)
 {
-    int len;
-    EVP_DecryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
+    int len, ret;
+
+    ret = EVP_DecryptFinal_ex((EVP_CIPHER_CTX*)handler, dataOut, &len);
     *dataOutLength += len;
     EVP_CIPHER_CTX_free((EVP_CIPHER_CTX*)handler);
+
+   if (ret <= 0)
+       EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
 void* DRMProcessorClientImpl::zipOpen(const std::string& path)

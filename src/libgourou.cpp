@@ -869,7 +869,7 @@ namespace gourou
 	// Generate IV in front
 	client->randBytes(encrypted_data, 16);
 	    
-	client->Encrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+	client->encrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
 			deviceKey, 16, encrypted_data, 16,
 			data, len,
 			encrypted_data+16, &outLen);
@@ -888,7 +888,7 @@ namespace gourou
 	const unsigned char* deviceKey = device->getDeviceKey();
 	unsigned char* decrypted_data = new unsigned char[len-16];
 
-	client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+	client->decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
 			deviceKey, 16, data, 16,
 			data+16, len-16,
 			decrypted_data, &outLen);
@@ -1009,7 +1009,7 @@ namespace gourou
 
 	unsigned char* clearRSAKey = new unsigned char[arrayEncryptedKey.size()];
 	
-	client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+	client->decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
 			(const unsigned char*)key, (unsigned int)sizeof(key),
 			(const unsigned char*)iv, (unsigned int)sizeof(iv),
 			(const unsigned char*)arrayEncryptedKey.data(), arrayEncryptedKey.size(),
@@ -1109,7 +1109,7 @@ namespace gourou
 		gourou::ByteArray inflateData(true);
 		unsigned int dataOutLength;
 
-		client->Decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
+		client->decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
 				decryptedKey+sizeof(decryptedKey)-16, 16, /* Key */
 				_data, 16, /* IV */
 				&_data[16], zipData.length()-16,
@@ -1313,7 +1313,7 @@ namespace gourou
 
 		    GOUROU_LOG(DEBUG, "Decrypt string " << dictIt->first << " " << dataLength);
 
-		    client->Decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
+		    client->decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
 				    tmpKey, 16, /* Key */
 				    NULL, 0, /* IV */
 				    encryptedData, dataLength,
@@ -1346,7 +1346,7 @@ namespace gourou
 		
 		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId() << ", size " << stream->dataLength());
 
-		client->Decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
+		client->decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
 				tmpKey, 16, /* Key */
 				NULL, 0, /* IV */
 				encryptedData, dataLength,

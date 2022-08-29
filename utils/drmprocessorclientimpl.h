@@ -45,9 +45,9 @@ public:
     
     /* Digest interface */
     virtual void* createDigest(const std::string& digestName);
-    virtual int digestUpdate(void* handler, unsigned char* data, unsigned int length);
-    virtual int digestFinalize(void* handler,unsigned char* digestOut);
-    virtual int digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut);
+    virtual void digestUpdate(void* handler, unsigned char* data, unsigned int length);
+    virtual void digestFinalize(void* handler,unsigned char* digestOut);
+    virtual void digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut);
 
     /* Random interface */
     virtual void randBytes(unsigned char* bytesOut, unsigned int length);
@@ -80,34 +80,34 @@ public:
 				    unsigned char** certOut, unsigned int* certOutLength);
 				 
     /* Crypto interface */
-    virtual void Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+    virtual void encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			 const unsigned char* key, unsigned int keyLength,
 			 const unsigned char* iv, unsigned int ivLength,
 			 const unsigned char* dataIn, unsigned int dataInLength,
 			 unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void* EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+    virtual void* encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			      const unsigned char* key, unsigned int keyLength,
 			      const unsigned char* iv=0, unsigned int ivLength=0);
 
 
-    virtual void EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+    virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 				   unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void EncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+    virtual void decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			 const unsigned char* key, unsigned int keyLength,
 			 const unsigned char* iv, unsigned int ivLength,
 			 const unsigned char* dataIn, unsigned int dataInLength,
 			 unsigned char* dataOut, unsigned int* dataOutLength);
 
-    virtual void* DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+    virtual void* decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			      const unsigned char* key, unsigned int keyLength,
 			      const unsigned char* iv=0, unsigned int ivLength=0);
 
-    virtual void DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+    virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 			       unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
 
     /* ZIP Interface */
     virtual void* zipOpen(const std::string& path);

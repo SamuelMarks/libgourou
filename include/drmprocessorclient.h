@@ -47,20 +47,16 @@ namespace gourou
 	 * @param handler         Digest handler
 	 * @param data            Data to digest
 	 * @param length          Length of data
-	 *
-	 * @return OK/KO
 	 */
-	virtual int digestUpdate(void* handler, unsigned char* data, unsigned int length) = 0;
+	virtual void digestUpdate(void* handler, unsigned char* data, unsigned int length) = 0;
 
 	/**
 	 * @brief Finalize digest with remained buffered data and destroy handler
 	 *
 	 * @param handler         Digest handler
 	 * @param digestOut       Digest result (buffer must be pre allocated with right size)
-	 *
-	 * @return OK/KO
 	 */
-	virtual int digestFinalize(void* handler, unsigned char* digestOut) = 0;
+	virtual void digestFinalize(void* handler, unsigned char* digestOut) = 0;
 
 	/**
 	 * @brief Global digest function
@@ -69,10 +65,8 @@ namespace gourou
 	 * @param data            Data to digest
 	 * @param length          Length of data
 	 * @param digestOut       Digest result (buffer must be pre allocated with right size)
-	 *
-	 * @return OK/KO
 	 */
-	virtual int digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut) = 0;
+	virtual void digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut) = 0;
     };
 
     class RandomInterface
@@ -239,7 +233,7 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void Encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+	virtual void encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			     const unsigned char* key, unsigned int keyLength,
 			     const unsigned char* iv, unsigned int ivLength,
 			     const unsigned char* dataIn, unsigned int dataInLength,
@@ -256,7 +250,7 @@ namespace gourou
 	 *
 	 * @return AES handler
 	 */
-	virtual void* EncryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+	virtual void* encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 				  const unsigned char* key, unsigned int keyLength,
 				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
 
@@ -269,18 +263,18 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void EncryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+	virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
-	 * @brief Finalizeencryption (pad and encrypt last block if needed)
+	 * @brief Finalize encryption (pad and encrypt last block if needed)
 	 * Destroy handler at the end
 	 *
 	 * @param handler        Crypto handler
 	 * @param dataOut        Last block of encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void EncryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 
 	/**
 	 * @brief Do decryption. If length of data is not multiple of block size, PKCS#5 padding is done
@@ -296,7 +290,7 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void Decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+	virtual void decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 			     const unsigned char* key, unsigned int keyLength,
 			     const unsigned char* iv, unsigned int ivLength,
 			     const unsigned char* dataIn, unsigned int dataInLength,
@@ -313,7 +307,7 @@ namespace gourou
 	 *
 	 * @return AES handler
 	 */
-	virtual void* DecryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
+	virtual void* decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 				  const unsigned char* key, unsigned int keyLength,
 				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
 
@@ -326,7 +320,7 @@ namespace gourou
 	 * @param dataOut        Decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void DecryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
+	virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
 				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
 	/**
 	 * @brief Finalize decryption (decrypt last block and remove padding if it is set).
@@ -336,7 +330,7 @@ namespace gourou
 	 * @param dataOut        Last block decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void DecryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
     };
 
 
