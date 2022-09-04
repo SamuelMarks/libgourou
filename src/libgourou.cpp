@@ -963,20 +963,33 @@ namespace gourou
 
     /**
      * RSA Key can be over encrypted with AES128-CBC if keyType attribute is set
-     * Key = SHA256(keyType)[14:22] || SHA256(keyType)[7:13]
+     * For EPUB, Key = SHA256(keyType)[14:22] || SHA256(keyType)[7:13]
+     * For PDF,  Key = SHA256(keyType)[6:19]  || SHA256(keyType)[3:6]
      * IV = DeviceID ^ FulfillmentId ^ VoucherId
      *
      * @return Base64 encoded decrypted key
      */
-    std::string DRMProcessor::encryptedKeyFirstPass(pugi::xml_document& rightsDoc, const std::string& encryptedKey, const std::string& keyType)
+    std::string DRMProcessor::encryptedKeyFirstPass(pugi::xml_document& rightsDoc, const std::string& encryptedKey, const std::string& keyType, ITEM_TYPE type)
     {
 	unsigned char digest[32], key[16], iv[16];
 	unsigned int dataOutLength;
 	std::string id;
 		
 	client->digest("SHA256", (unsigned char*)keyType.c_str(), keyType.size(), digest);
-	memcpy(key, &digest[14], 9);
-	memcpy(&key[9], &digest[7], 7);
+
+	dumpBuffer(gourou::LG_LOG_DEBUG, "SHA of KeyType : ", digest, sizeof(digest));
+
+	switch(type)
+	{
+	case EPUB:
+	    memcpy(key, &digest[14], 9);
+	    memcpy(&key[9], &digest[7], 7);
+	    break;
+	case PDF:
+	    memcpy(key, &digest[6], 13);
+	    memcpy(&key[13], &digest[3], 3);
+	    break;
+	}
 
 	id = extractTextElem(rightsDoc, "/adept:rights/licenseToken/device");
 	if (id == "")
@@ -1054,7 +1067,7 @@ namespace gourou
 	    std::string keyType = extractTextAttribute(rightsDoc, "/adept:rights/licenseToken/encryptedKey", "keyType", false);
 
 	    if (keyType != "")
-		encryptedKey = encryptedKeyFirstPass(rightsDoc, encryptedKey, keyType);
+		encryptedKey = encryptedKeyFirstPass(rightsDoc, encryptedKey, keyType, EPUB);
 	    
 	    decryptADEPTKey(encryptedKey, decryptedKey);
 
@@ -1245,7 +1258,20 @@ namespace gourou
 		std::string encryptedKey = extractTextElem(rightsDoc, "/adept:rights/licenseToken/encryptedKey");
 
 		if (!encryptionKey)
+		{
+		    std::string keyType = extractTextAttribute(rightsDoc, "/adept:rights/licenseToken/encryptedKey", "keyType", false);
+
+		    if (keyType != "")
+			encryptedKey = encryptedKeyFirstPass(rightsDoc, encryptedKey, keyType, PDF);
+		    
 		    decryptADEPTKey(encryptedKey, decryptedKey);
+
+		    dumpBuffer(gourou::LG_LOG_DEBUG, "Decrypted : ", decryptedKey, RSA_KEY_SIZE);
+
+		    if (decryptedKey[0] != 0x00 || decryptedKey[1] != 0x02 ||
+			decryptedKey[RSA_KEY_SIZE-16-1] != 0x00)
+			EXCEPTION(DRM_ERR_ENCRYPTION_KEY, "Unable to retrieve encryption key");
+		}
 		else
 		{
 		    GOUROU_LOG(DEBUG, "Use provided encryption key");
@@ -1314,7 +1340,7 @@ namespace gourou
 		    GOUROU_LOG(DEBUG, "Decrypt string " << dictIt->first << " " << dataLength);
 
 		    client->decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
-				    tmpKey, 16, /* Key */
+				    tmpKey, sizeof(tmpKey), /* Key */
 				    NULL, 0, /* IV */
 				    encryptedData, dataLength,
 				    clearData, &dataOutLength);
@@ -1347,7 +1373,7 @@ namespace gourou
 		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId() << ", size " << stream->dataLength());
 
 		client->decrypt(CryptoInterface::ALGO_RC4, CryptoInterface::CHAIN_ECB,
-				tmpKey, 16, /* Key */
+				tmpKey, sizeof(tmpKey), /* Key */
 				NULL, 0, /* IV */
 				encryptedData, dataLength,
 				clearData, &dataOutLength);
