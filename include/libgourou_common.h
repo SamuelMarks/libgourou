@@ -131,7 +131,17 @@ namespace gourou
 	DRM_INVALID_KEY_SIZE,
 	DRM_ERR_ENCRYPTION_KEY_FP
     };
-
+    
+    #ifndef _NOEXCEPT
+    #if __STDC_VERSION__ >= 201112L
+    #  define _NOEXCEPT noexcept
+    #  define _NOEXCEPT_(x) noexcept(x)
+    #else
+    #  define _NOEXCEPT throw()
+    #  define _NOEXCEPT_(x)
+    #endif
+    #endif /* !_NOEXCEPT */
+    
     /**
      * Generic exception class
      */
@@ -157,7 +167,7 @@ namespace gourou
 	    this->fullmessage = strdup(other.fullmessage);
 	}
 
-	~Exception()
+	~Exception() _NOEXCEPT
 	{
 	    free(fullmessage);
 	}

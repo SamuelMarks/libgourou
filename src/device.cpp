@@ -29,13 +29,23 @@
 #include <libgourou_log.h>
 #include <device.h>
 
-// From https://stackoverflow.com/questions/1779715/how-to-get-mac-address-of-your-machine-using-a-c-program/35242525
+#include <string.h>
+#if defined(__linux__) || defined(linux) || defined(__linux)
 #include <sys/ioctl.h>
-#include <net/if.h> 
+#include <net/if.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <string.h>
+#elif (defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) \
+      || defined(__bsdi__) || defined(__DragonFly__) || defined(__APPLE__))
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <net/if_dl.h>
 
+#define BSD_HEADERS 1
+#endif
+
+#if defined(__linux__) || defined(linux) || defined(__linux)
+// From https://stackoverflow.com/questions/1779715/how-to-get-mac-address-of-your-machine-using-a-c-program/35242525
 int get_mac_address(unsigned char* mac_address)
 {
     struct ifreq ifr;
@@ -74,6 +84,43 @@ int get_mac_address(unsigned char* mac_address)
 
     return 1;
 }
+#elif BSD_HEADERS
+// https://stackoverflow.com/a/3978293
+int get_mac_address(unsigned char* mac_address, const char* if_name = "en0")
+{
+    ifaddrs* iflist;
+    int found = 0;
+    if (getifaddrs(&iflist) == 0) {
+        for (ifaddrs* cur = iflist; cur; cur = cur->ifa_next) {
+            if ((cur->ifa_addr->sa_family == AF_LINK) &&
+                (strcmp(cur->ifa_name, if_name) == 0) &&
+                cur->ifa_addr) {
+                sockaddr_dl* sdl = (sockaddr_dl*)cur->ifa_addr;
+                memcpy(mac_address, LLADDR(sdl), sdl->sdl_alen);
+                found = 1;
+                break;
+            }
+        }
+
+        freeifaddrs(iflist);
+    }
+    return found;
+}
+#else
+int get_mac_address(unsigned char* mac_address)
+{
+    GOUROU_LOG(INFO, "get_mac_address() not implemented for your platform, using a static address");
+    
+    mac_address[0] = 0x8D;
+    mac_address[1] = 0x70;
+    mac_address[2] = 0x13;
+    mac_address[3] = 0x8D;
+    mac_address[4] = 0x43;
+    mac_address[5] = 0x27;
+
+    return 1;
+}
+#endif /* defined(__linux__) || defined(linux) || defined(__linux) */
 
 
 namespace gourou

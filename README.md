@@ -42,7 +42,6 @@ _externals_ :
 _internals_ :
 
   * PugiXML
-  * Base64
   * uPDFParser
 
 For utils :

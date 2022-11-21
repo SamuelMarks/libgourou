@@ -33,7 +33,11 @@ class Base64 {
  public:
 
   static std::string Encode(const std::string data) {
-    static constexpr char sEncodingTable[] = {
+    static
+#if __STDC_VERSION__ >= 201112L
+    constexpr
+#endif /* __STDC_VERSION__ >= 201112L */
+    char sEncodingTable[] = {
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
       'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
       'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
@@ -73,7 +77,11 @@ class Base64 {
   }
 
   static std::string Decode(const std::string& input, std::string& out) {
-    static constexpr unsigned char kDecodingTable[] = {
+    static
+#if __STDC_VERSION__ >= 201112L
+    constexpr
+#endif /* __STDC_VERSION__ >= 201112L */
+    unsigned char kDecodingTable[] = {
       64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
       64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
       64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63,
