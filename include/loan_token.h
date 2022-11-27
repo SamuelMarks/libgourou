@@ -24,12 +24,14 @@
 
 #include <pugixml.hpp>
 
+#include "libgourou_export.h"
+
 namespace gourou
 {
     /**
      * @brief This class is a container for a fulfillment object
      */
-    class LoanToken
+    LIBGOUROU_EXPORT class LoanToken
     {
     public:
 	/**

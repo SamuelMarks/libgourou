@@ -23,18 +23,19 @@
 #include <string>
 #include <map>
 
-#include "bytearray.h"
-
 #include <pugixml.hpp>
+
+#include "bytearray.h"
+#include "libgourou_export.h"
 
 namespace gourou
 {
-    class DRMProcessor;
+    LIBGOUROU_EXPORT class DRMProcessor;
     
     /**
      * @brief This class is a container for activation.xml (activation info). It should not be used by user.
      */
-    class User
+    LIBGOUROU_EXPORT class User
     {
     public:
         User(DRMProcessor* processor, const std::string& activationFile);
@@ -70,12 +71,12 @@ namespace gourou
 	/**
 	 * @brief Get one value of activation.xml 
 	 */
-	std::string getProperty(const std::string property);
+	std::string getProperty(const std::string &property);
 	
 	/**
 	 * @brief Get all nodes with property name
 	 */
-	pugi::xpath_node_set getProperties(const std::string property);
+	pugi::xpath_node_set getProperties(const std::string &property);
 	
 	/**
 	 * @brief Create activation.xml and devicesalt files if they did not exists

@@ -30,13 +30,14 @@
 
 #include <iostream>
 #include <algorithm>
+#include <map>
 
 #define _XOPEN_SOURCE 700
-#include <stdio.h>
+#include <cstdio>
 #include <sys/types.h>
 #include <dirent.h>
 #include <libgen.h>
-#include <time.h>
+#include <ctime>
 
 #include <libgourou.h>
 #include <libgourou_common.h>
@@ -45,13 +46,13 @@
 
 #define MAX_SIZE_BOOK_NAME   30
 
-static       char* activationDir  = 0;
+static       char* activationDir  = nullptr;
 static const char* deviceFile     = "device.xml";
 static const char* activationFile = "activation.xml";
 static const char* devicekeyFile  = "devicesalt";
 static       bool  list           = false;
-static const char* returnID       = 0;
-static const char* deleteID       = 0;
+static const char* returnID       = nullptr;
+static const char* deleteID       = nullptr;
 
 struct Loan
 {
@@ -451,7 +452,7 @@ int main(int argc, char** argv)
     if (hasErrors)
     {
 	// In case of activation dir was provided by user
-	activationDir = 0;
+	activationDir = nullptr;
 	goto end;
     }
 

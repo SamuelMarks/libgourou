@@ -33,9 +33,10 @@
 #include <iomanip>
 #include <algorithm>
 
-#include <string.h>
+#include <cstring>
 
-#include <libgourou_log.h>
+#include "libgourou_log.h"
+#include "libgourou_export.h"
 #include "bytearray.h"
 
 namespace gourou
@@ -49,8 +50,8 @@ namespace gourou
     static const int SHA1_LEN           = 20;
     static const int RSA_KEY_SIZE       = 128;
     static const int RSA_KEY_SIZE_BITS  = (RSA_KEY_SIZE*8);
-    
-    enum GOUROU_ERROR {
+
+    LIBGOUROU_EXPORT enum GOUROU_ERROR {
 	GOUROU_DEVICE_DOES_NOT_MATCH = 0x1000,
 	GOUROU_INVALID_CLIENT,
 	GOUROU_TAG_NOT_FOUND,
@@ -59,7 +60,7 @@ namespace gourou
 	GOUROU_INVALID_PROPERTY
     };
 
-    enum FULFILL_ERROR {
+    LIBGOUROU_EXPORT enum FULFILL_ERROR {
 	FF_ACSM_FILE_NOT_EXISTS = 0x1100,
 	FF_INVALID_ACSM_FILE,
 	FF_NO_HMAC_IN_ACSM_FILE,
@@ -67,20 +68,20 @@ namespace gourou
 	FF_NO_OPERATOR_URL
     };
 
-    enum DOWNLOAD_ERROR {
+    LIBGOUROU_EXPORT enum DOWNLOAD_ERROR {
 	DW_NO_ITEM = 0x1200,
 	DW_NO_EBX_HANDLER,
     };
 
-    enum SIGNIN_ERROR {
+    LIBGOUROU_EXPORT enum SIGNIN_ERROR {
 	SIGN_INVALID_CREDENTIALS = 0x1300,
     };
-    
-    enum ACTIVATE_ERROR {
+
+    LIBGOUROU_EXPORT enum ACTIVATE_ERROR {
 	ACTIVATE_NOT_SIGNEDIN = 0x1400
     };
-    
-    enum DEV_ERROR {
+
+    LIBGOUROU_EXPORT enum DEV_ERROR {
 	DEV_MKPATH = 0x2000,
 	DEV_MAC_ERROR,
 	DEV_INVALID_DEVICE_FILE,
@@ -88,7 +89,7 @@ namespace gourou
 	DEV_INVALID_DEV_PROPERTY,
     };
 
-    enum USER_ERROR {
+    LIBGOUROU_EXPORT enum USER_ERROR {
 	USER_MKPATH = 0x3000,
 	USER_INVALID_ACTIVATION_FILE,
 	USER_NO_AUTHENTICATION_URL,
@@ -96,12 +97,12 @@ namespace gourou
 	USER_INVALID_INPUT,
     };
 
-    enum FULFILL_ITEM_ERROR {
+    LIBGOUROU_EXPORT enum FULFILL_ITEM_ERROR {
 	FFI_INVALID_FULFILLMENT_DATA = 0x4000,
 	FFI_INVALID_LOAN_TOKEN
     };
-    
-    enum CLIENT_ERROR {
+
+    LIBGOUROU_EXPORT enum CLIENT_ERROR {
 	CLIENT_BAD_PARAM = 0x5000,
 	CLIENT_INVALID_PKCS12,
 	CLIENT_INVALID_CERTIFICATE,
@@ -121,7 +122,7 @@ namespace gourou
 	CLIENT_DIGEST_ERROR,
     };
 
-    enum DRM_REMOVAL_ERROR {
+    LIBGOUROU_EXPORT enum DRM_REMOVAL_ERROR {
 	DRM_ERR_ENCRYPTION_KEY = 0x6000,
 	DRM_VERSION_NOT_SUPPORTED,
 	DRM_FILE_ERROR,
@@ -145,7 +146,7 @@ namespace gourou
     /**
      * Generic exception class
      */
-    class Exception : public std::exception
+    LIBGOUROU_EXPORT class Exception : public std::exception
     {
     public:
 	Exception(int code, const char* message, const char* file, int line):
@@ -162,8 +163,8 @@ namespace gourou
 	Exception(const Exception& other)
 	{
 	    this->code = other.code;
-	    this->line = line;
-	    this->file = file;
+	    /*this->line = line;
+	    this->file = file;*/
 	    this->fullmessage = strdup(other.fullmessage);
 	}
 
@@ -191,7 +192,7 @@ namespace gourou
     /**
      * Stream writer for pugi::xml
      */
-    class StringXMLWriter : public pugi::xml_writer
+    LIBGOUROU_EXPORT class StringXMLWriter : public pugi::xml_writer
     {
     public:
 	virtual void write(const void* data, size_t size)
@@ -355,7 +356,7 @@ namespace gourou
     /**
      * @brief Write data in a file. If it already exists, it's truncated
      */
-    static inline void writeFile(std::string path, const unsigned char* data, unsigned int length)
+    static inline void writeFile(const std::string &path, const unsigned char* data, unsigned int length)
     {
 	int fd = createNewFile(path);
 	
@@ -368,7 +369,7 @@ namespace gourou
     /**
      * @brief Write data in a file. If it already exists, it's truncated
      */
-    static inline void writeFile(std::string path, ByteArray& data)
+    static inline void writeFile(const std::string &path, ByteArray& data)
     {
 	writeFile(path, data.data(), data.length());
     }
@@ -376,7 +377,7 @@ namespace gourou
     /**
      * @brief Write data in a file. If it already exists, it's truncated
      */
-    static inline void writeFile(std::string path, const std::string& data)
+    static inline void writeFile(const std::string &path, const std::string& data)
     {
 	writeFile(path, (const unsigned char*)data.c_str(), data.length());
     }
@@ -384,7 +385,7 @@ namespace gourou
     /**
      * Read data from file
      */
-    static inline void readFile(std::string path, const unsigned char* data, unsigned int length)
+    static inline void readFile(const std::string &path, const unsigned char* data, unsigned int length)
     {
 	int fd = open(path.c_str(), O_RDONLY);
 

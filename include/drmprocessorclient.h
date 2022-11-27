@@ -21,6 +21,8 @@
 #define _DRMPROCESSORCLIENT_H_
 
 #include <string>
+
+#include "libgourou_export.h"
 #include <bytearray.h>
 
 namespace gourou
@@ -31,7 +33,7 @@ namespace gourou
      * and improve code portability
      */
 
-    class DigestInterface
+    LIBGOUROU_EXPORT class DigestInterface
     {
     public:
 	/**

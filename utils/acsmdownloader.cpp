@@ -63,23 +63,23 @@ public:
 	    if (exportPrivateKey)
 	    {
 		std::string filename;
-		if (!outputFile)
-		    filename = std::string("Adobe_PrivateLicenseKey--") + user->getUsername() + ".der";
-		else
-		    filename = outputFile;
-	    
-		if (outputDir)
-		{
-		    if (!fileExists(outputDir))
-			mkpath(outputDir);
-		    
-		    filename = std::string(outputDir) + "/" + filename;
-		}
+            if (outputFile != nullptr)
+                filename = outputFile;
+            else
+                filename = std::string("Adobe_PrivateLicenseKey--") + user->getUsername() + ".der";
 
-		processor.exportPrivateLicenseKey(filename);
+            if (outputDir)
+            {
+                if (!fileExists(outputDir))
+                    mkpath(outputDir);
 
-		std::cout << "Private license key exported to " << filename << std::endl;
-	    }
+                filename = std::string(outputDir) + "/" + filename;
+            }
+
+            processor.exportPrivateLicenseKey(filename);
+
+            std::cout << "Private license key exported to " << filename << std::endl;
+        }
 	    else
 	    {
 		gourou::FulfillmentItem* item = processor.fulfill(acsmFile);

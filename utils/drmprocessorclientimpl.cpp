@@ -30,6 +30,7 @@
 #include <algorithm> 
 #include <cctype>
 #include <locale>
+#include <map>
 
 #define OPENSSL_NO_DEPRECATED 1
 
@@ -163,7 +164,7 @@ static size_t curlHeaders(char *buffer, size_t size, size_t nitems, void *userda
     std::string::size_type pos = 0;
     std::string buf(buffer, size*nitems);
 
-    pos = buf.find(":", pos);
+    pos = buf.find(':', pos);
 
     if (pos != std::string::npos)
     {
@@ -191,7 +192,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 	responseHeaders = &localHeaders;
     
     GOUROU_LOG(INFO, "Send request to " << URL);
-    if (POSTData.size())
+    if (!POSTData.empty())
     {
 	GOUROU_LOG(DEBUG, "<<< " << std::endl << POSTData);
     }
@@ -220,7 +221,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     struct curl_slist *list = NULL;
     list = curl_slist_append(list, "Accept: */*");
     std::string _contentType;
-    if (contentType.size())
+    if (!contentType.empty())
     {
 	_contentType = "Content-Type: " + contentType;
 	list = curl_slist_append(list, _contentType.c_str());
@@ -228,7 +229,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 
-    if (POSTData.size())
+    if (!POSTData.empty())
     {
 	curl_easy_setopt(curl, CURLOPT_POST, 1L);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, POSTData.size());

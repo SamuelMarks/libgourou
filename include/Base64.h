@@ -27,9 +27,11 @@
 
 #include <string>
 
+#include "libgourou_export.h"
+
 namespace macaron {
 
-class Base64 {
+LIBGOUROU_EXPORT class Base64 {
  public:
 
   static std::string Encode(const std::string data) {

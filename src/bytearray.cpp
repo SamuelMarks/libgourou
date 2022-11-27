@@ -16,7 +16,7 @@
   You should have received a copy of the GNU Lesser General Public License
   along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
-#include <string.h>
+#include <cstring>
 #include <stdexcept>
 
 #include <Base64.h>
@@ -201,7 +201,7 @@ namespace gourou
     {
 	char* tmp = new char[_length*2+1];
 
-	for(int i=0; i<(int)_length; i++)
+	for(unsigned i=0; i<_length; i++)
 	    sprintf(&tmp[i*2], "%02x", _data[i]);
 
 	tmp[_length*2] = 0;

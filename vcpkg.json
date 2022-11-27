@@ -1,0 +1,9 @@
+{
+  "name": "libgourou",
+  "version-string": "0.8.0",
+  "dependencies": [
+    "openssl",
+    "pugixml",
+    "libzip"
+  ]
+}

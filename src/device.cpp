@@ -29,7 +29,7 @@
 #include <libgourou_log.h>
 #include <device.h>
 
-#include <string.h>
+#include <cstring>
 #if defined(__linux__) || defined(linux) || defined(__linux)
 #include <sys/ioctl.h>
 #include <net/if.h>

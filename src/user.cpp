@@ -69,8 +69,8 @@ namespace gourou {
 	    for (pugi::xpath_node_set::const_iterator it = nodeSet.begin();
 		 it != nodeSet.end(); ++it)
 	    {
-		std::string url = gourou::extractTextElem(it->node(), "adept:licenseURL");
-		std::string certificate = gourou::extractTextElem(it->node(), "adept:certificate");
+		const std::string url = gourou::extractTextElem(it->node(), "adept:licenseURL");
+		const std::string certificate = gourou::extractTextElem(it->node(), "adept:certificate");
 		licenseServiceCertificates[url] = certificate;
 	    }
 	}
@@ -111,7 +111,7 @@ namespace gourou {
 	updateActivationFile(xmlWriter.getResult().c_str());
     }
 
-    std::string User::getProperty(const std::string property)
+    std::string User::getProperty(const std::string &property)
     {
 	pugi::xpath_node xpathRes = activationDoc.select_node(property.c_str());
 	if (!xpathRes)
@@ -121,7 +121,7 @@ namespace gourou {
 	return trim(res);
     }
     
-    pugi::xpath_node_set User::getProperties(const std::string property)
+    pugi::xpath_node_set User::getProperties(const std::string &property)
     {
 	return activationDoc.select_nodes(property.c_str());
     }

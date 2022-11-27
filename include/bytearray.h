@@ -23,6 +23,8 @@
 #include <map>
 #include <string>
 
+#include "libgourou_export.h"
+
 namespace gourou
 {
     /**
@@ -34,7 +36,7 @@ namespace gourou
      * and then shared between all copies until last object is destroyed
      * (internal reference counter == 0)
      */
-    class ByteArray
+    LIBGOUROU_EXPORT class ByteArray
     {
     public:
 

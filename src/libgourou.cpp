@@ -19,8 +19,9 @@
 
 #include <arpa/inet.h>
 #include <sys/time.h>
-#include <time.h>
+#include <ctime>
 #include <vector>
+#include <map>
 
 #include <uPDFParser.h>
 

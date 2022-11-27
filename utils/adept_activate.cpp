@@ -29,13 +29,14 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <termios.h>
-#include <string.h>
-#include <limits.h>
+#include <cstring>
+#include <climits>
 
 #include <iostream>
 #include <ostream>
 
 #include <libgourou.h>
+#include <libgen.h>
 #include "drmprocessorclientimpl.h"
 #include "utils_common.h"
 

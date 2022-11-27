@@ -22,8 +22,10 @@
 
 #include <iostream>
 
+#include "libgourou_export.h"
+
 namespace gourou {
-    enum GOUROU_LOG_LEVEL {
+    LIBGOUROU_EXPORT enum GOUROU_LOG_LEVEL {
 	LG_LOG_ERROR,
 	LG_LOG_WARN,
 	LG_LOG_INFO,
@@ -31,7 +33,7 @@ namespace gourou {
 	LG_LOG_TRACE
     };
 
-    extern GOUROU_LOG_LEVEL logLevel;
+    extern LIBGOUROU_EXPORT GOUROU_LOG_LEVEL logLevel;
 
 #define GOUROU_LOG(__lvl, __msg) if (gourou::LG_LOG_##__lvl <= gourou::logLevel) {std::cout << __msg << std::endl << std::flush;}
 #define GOUROU_LOG_FUNC() GOUROU_LOG(TRACE, __FUNCTION__ << "() @ " << __FILE__ << ":" << __LINE__)
@@ -39,12 +41,12 @@ namespace gourou {
     /**
      * @brief Get current log level
      */
-    GOUROU_LOG_LEVEL getLogLevel();
+    LIBGOUROU_EXPORT GOUROU_LOG_LEVEL getLogLevel();
 
     /**
      * @brief Set log level
      */
-    void setLogLevel(GOUROU_LOG_LEVEL level);
+    LIBGOUROU_EXPORT void setLogLevel(GOUROU_LOG_LEVEL level);
 }
 
 #endif

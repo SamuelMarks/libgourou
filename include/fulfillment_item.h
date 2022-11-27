@@ -20,9 +20,10 @@
 #ifndef _FULFILLMENT_ITEM_H_
 #define _FULFILLMENT_ITEM_H_
 
-#include "loan_token.h"
-
 #include <pugixml.hpp>
+
+#include "loan_token.h"
+#include "libgourou_export.h"
 
 namespace gourou
 {
@@ -31,7 +32,7 @@ namespace gourou
     /**
      * @brief This class is a container for a fulfillment object
      */
-    class FulfillmentItem
+    LIBGOUROU_EXPORT class FulfillmentItem
     {
     public:
 	/**

@@ -20,14 +20,16 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+#include "libgourou_export.h"
+
 namespace gourou
 {
-    class DRMProcessor;
+    LIBGOUROU_EXPORT class DRMProcessor;
 
     /**
      * @brief This class is a container for device.xml (device info) and devicesalt (device private key). It should not be used by user.
      */
-    class Device
+    LIBGOUROU_EXPORT class Device
     {
     public:
 	static const int DEVICE_KEY_SIZE   = 16;

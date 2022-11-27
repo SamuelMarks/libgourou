@@ -87,7 +87,7 @@ namespace gourou
 	licenseURL.set_name("adept:licenseURL");
 	licenseServiceInfo.append_copy(licenseURL);
 	pugi::xml_node certificate = licenseServiceInfo.append_child("adept:certificate");
-	std::string certificateValue = user->getLicenseServiceCertificate(licenseURL.first_child().value());
+	const std::string certificateValue = user->getLicenseServiceCertificate(licenseURL.first_child().value());
 	certificate.append_child(pugi::node_pcdata).set_value(certificateValue.c_str());
     }
     

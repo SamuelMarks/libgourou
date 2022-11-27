@@ -40,14 +40,18 @@
 #define ACS_SERVER              "http://adeactivate.adobe.com/adept"
 #endif
 
+#ifndef LIBGOUROU_VERSION
 #define LIBGOUROU_VERSION       "0.8"
+#endif /* !LIBGOUROU_VERSION */
+
+#include "libgourou_export.h"
 
 namespace gourou
 {
     /**
      * @brief Main class that handle all ADEPTS functions (fulfill, download, signIn, activate)
      */
-    class DRMProcessor
+    LIBGOUROU_EXPORT class DRMProcessor
     {
     public:
 

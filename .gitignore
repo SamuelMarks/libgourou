@@ -9,3 +9,5 @@ utils/adept_activate
 utils/adept_remove
 utils/adept_loan_mgt
 .adept*
+*build*
+.idea

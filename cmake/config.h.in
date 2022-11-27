@@ -1,0 +1,9 @@
+#ifndef libgourou_CONFIG_H
+#define libgourou_CONFIG_H
+
+#define libgourou_VERSION_MAJOR @libgourou_VERSION_MAJOR@
+#define libgourou_VERSION_MINOR @libgourou_VERSION_MINOR@
+#define libgourou_VERSION_PATCH @libgourou_VERSION_PATCH@
+#define libgourou_VERSION       "@libgourou_VERSION@"
+
+#endif /* !libgourou_CONFIG_H */

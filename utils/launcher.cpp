@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <libgen.h>
-#include <string.h>
+#include <cstring>
 
 #include "utils_common.h"
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist>
+  <dict>
+    <key>CFBundleExecutable</key>
+    <string>Knock</string>
+    <key>CFBundleIconFile</key>
+    <string>@MACOSX_BUNDLE_ICON_FILE@</string>
+    <key>CFBundleIdentifier</key>
+    <string>org.libgourou.gui</string>
+    <key>CFBundleName</key>
+    <string>libgourou</string>
+    <key>CFBundleDisplayName</key>
+    <string>Knock</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@GUI_VERSION@</string>
+    <key>CFBundleVersion</key>
+    <string>@GUI_VERSION@</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Open Knock</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+  </dict>
+</plist>

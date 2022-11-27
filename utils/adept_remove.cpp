@@ -32,6 +32,7 @@
 
 #include <libgourou.h>
 #include <libgourou_common.h>
+#include <libgen.h>
 
 #include "drmprocessorclientimpl.h"
 #include "utils_common.h"

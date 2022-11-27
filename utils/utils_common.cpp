@@ -29,10 +29,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <fcntl.h>
-#include <limits.h>
+#include <climits>
 
 #include <iostream>
 
