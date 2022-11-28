@@ -1,5 +1,5 @@
 get_filename_component(DIRNAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-set(LIBRARY_NAME "gourou")
+set(LIBRARY_NAME "${PROJECT_NAME_NO_PREFIX}")
 
 set(Source_Files
         "bytearray.cpp"
@@ -18,8 +18,8 @@ find_package(updfparser CONFIG REQUIRED)
 target_link_libraries(
         "${LIBRARY_NAME}"
         PRIVATE
-        "${PROJECT_NAME}_compiler_flags"
-        "${PROJECT_NAME}_include"
+        "${PROJECT_NAME_NO_PREFIX}_compiler_flags"
+        "${PROJECT_NAME_NO_PREFIX}_include"
         "updfparser"
         "updfparser_include"
         "updfparser_compiler_flags"
@@ -53,9 +53,9 @@ install(FILES ${_export_file}
 
 install(TARGETS
             "${LIBRARY_NAME}"
-            "${PROJECT_NAME}_compiler_flags"
-            "${PROJECT_NAME}_utils"
-            "${PROJECT_NAME}_include"
+            "${PROJECT_NAME_NO_PREFIX}_compiler_flags"
+            "${PROJECT_NAME_NO_PREFIX}_utils"
+            "${PROJECT_NAME_NO_PREFIX}_include"
         EXPORT "${LIBRARY_NAME}Targets"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"

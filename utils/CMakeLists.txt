@@ -1,5 +1,5 @@
 get_filename_component(DIRNAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-set(LIBRARY_NAME "${PROJECT_NAME}_${DIRNAME}")
+set(LIBRARY_NAME "${PROJECT_NAME_NO_PREFIX}_${DIRNAME}")
 
 set(Header_Files
         "drmprocessorclientimpl.h"
@@ -42,14 +42,9 @@ find_package(libzip CONFIG REQUIRED)
 target_link_libraries(
         "${LIBRARY_NAME}"
         PRIVATE
-        "${PROJECT_NAME}_compiler_flags"
+        "${PROJECT_NAME_NO_PREFIX}_compiler_flags"
         "libzip::zip"
-)
-
-target_link_libraries(
-        "${LIBRARY_NAME}"
-        PUBLIC
-        "${PROJECT_NAME}_include"
+        "${PROJECT_NAME_NO_PREFIX}_include"
 )
 
 include(GNUInstallDirs)

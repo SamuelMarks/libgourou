@@ -11,14 +11,16 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
-add_library("${PROJECT_NAME}_compiler_flags" INTERFACE)
-target_compile_features("${PROJECT_NAME}_compiler_flags" INTERFACE "cxx_std_${CMAKE_CXX_STANDARD}")
+set(PROJECT_NAME_NO_PREFIX "gourou")
+
+add_library("${PROJECT_NAME_NO_PREFIX}_compiler_flags" INTERFACE)
+target_compile_features("${PROJECT_NAME_NO_PREFIX}_compiler_flags" INTERFACE "cxx_std_${CMAKE_CXX_STANDARD}")
 
 set(gcc_like "$<COMPILE_LANG_AND_ID:C,CXX,ARMClang,AppleClang,Clang,GNU,LCC>")
 set(msvc "$<COMPILE_LANG_AND_ID:C,CXX,MSVC>")
 # -g -fsanitize=address -fno-omit-frame-pointer
 target_compile_options(
-        "${PROJECT_NAME}_compiler_flags"
+        "${PROJECT_NAME_NO_PREFIX}_compiler_flags"
         INTERFACE
         "$<${gcc_like}:$<BUILD_INTERFACE:-Wall;-Wextra;-Wshadow;-Wformat=2;-Wunused;-Wno-format-nonliteral;-pedantic>>"
         # "$<${msvc}:$<BUILD_INTERFACE:-W3;-WX;-Zi;-permissive->>"
@@ -31,7 +33,7 @@ endif (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "App
 # configure a header file to pass the version number only
 configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/config.h.in"
-        "${PROJECT_NAME}Config.h"
+        "${PROJECT_NAME_NO_PREFIX}Config.h"
 )
 
 add_subdirectory("include")
@@ -40,7 +42,7 @@ add_subdirectory("src")
 
 include(GNUInstallDirs)
 install(
-        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
+        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.h"
         TYPE "INCLUDE"
 )
 
@@ -64,7 +66,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/cmake/README.txt")
 set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_SOURCE_DIR}/cmake/Welcome.txt")
-set(CPACK_PACKAGE_CONTACT "https://github.com/BentonEdmondson/${PROJECT_NAME}")
+set(CPACK_PACKAGE_CONTACT "https://indefero.soutade.fr/p/${PROJECT_NAME}")
 
 include(CPack)
 include(CMakePackageConfigHelpers)
@@ -79,7 +81,7 @@ cpack_add_component(
 # generate the config file that is includes the exports
 configure_package_config_file(
         "${CMAKE_SOURCE_DIR}/cmake/Config.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.cmake"
         INSTALL_DESTINATION "lib/cmake/example"
         NO_SET_AND_CHECK_MACRO
         NO_CHECK_REQUIRED_COMPONENTS_MACRO
@@ -87,9 +89,9 @@ configure_package_config_file(
 
 # generate the version file for the config file
 write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}ConfigVersion.cmake"
         VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}"
         COMPATIBILITY AnyNewerVersion
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.cmake"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME_NO_PREFIX}")
