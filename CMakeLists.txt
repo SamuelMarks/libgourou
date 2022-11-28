@@ -33,7 +33,7 @@ endif (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "App
 # configure a header file to pass the version number only
 configure_file(
         "${CMAKE_SOURCE_DIR}/cmake/config.h.in"
-        "${PROJECT_NAME_NO_PREFIX}Config.h"
+        "${PROJECT_NAME}Config.h"
 )
 
 add_subdirectory("include")
@@ -42,7 +42,7 @@ add_subdirectory("src")
 
 include(GNUInstallDirs)
 install(
-        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.h"
+        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
         TYPE "INCLUDE"
 )
 
@@ -81,7 +81,7 @@ cpack_add_component(
 # generate the config file that is includes the exports
 configure_package_config_file(
         "${CMAKE_SOURCE_DIR}/cmake/Config.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
         INSTALL_DESTINATION "lib/cmake/example"
         NO_SET_AND_CHECK_MACRO
         NO_CHECK_REQUIRED_COMPONENTS_MACRO
@@ -93,5 +93,5 @@ write_basic_package_version_file(
         VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}"
         COMPATIBILITY AnyNewerVersion
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_NO_PREFIX}Config.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME_NO_PREFIX}")
