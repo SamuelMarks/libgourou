@@ -50,7 +50,7 @@ namespace gourou
     DRMProcessor::DRMProcessor(DRMProcessorClient* client,
 			       const std::string& deviceFile, const std::string& activationFile,
 			       const std::string& deviceKeyFile):
-	client(client), device(0), user(0)
+	client(client), device(nullptr), user(0)
     {
 	if (!client)
 	    EXCEPTION(GOUROU_INVALID_CLIENT, "DRMProcessorClient is NULL");

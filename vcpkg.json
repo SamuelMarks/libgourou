@@ -4,6 +4,7 @@
   "dependencies": [
     "openssl",
     "pugixml",
-    "libzip"
+    "libzip",
+    "updfparser"
   ]
 }

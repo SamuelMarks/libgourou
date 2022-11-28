@@ -16,12 +16,14 @@ set(Header_Files
 source_group("Header Files" FILES "${Header_Files}")
 
 add_library("${LIBRARY_NAME}" INTERFACE "${Header_Files}")
-
-
+find_package(pugixml CONFIG REQUIRED)
 target_link_libraries(
         "${LIBRARY_NAME}"
         INTERFACE
         "${PROJECT_NAME}_compiler_flags"
+        "pugixml"
+        "pugixml::static"
+        "pugixml::pugixml"
 )
 
 include(GNUInstallDirs)
