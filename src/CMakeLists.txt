@@ -7,7 +7,7 @@ set(Source_Files
         "fulfillment_item.cpp"
         "libgourou.cpp"
         "loan_token.cpp"
-        "user.cpp"
+        "user_drm.cpp"
 )
 source_group("Source Files" FILES "${Source_Files}")
 

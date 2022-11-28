@@ -20,7 +20,7 @@
 #include <cctype>
 #include <fulfillment_item.h>
 #include <libgourou_common.h>
-#include "user.h"
+#include "user_drm.h"
 
 namespace gourou
 {

@@ -185,4 +185,5 @@ namespace gourou
 	static std::map<unsigned char*, int> refCounter;
     };
 }
-#endif
+
+#endif /* ! _BYTEARRAY_H_ */

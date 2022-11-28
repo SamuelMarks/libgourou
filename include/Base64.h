@@ -131,4 +131,4 @@ LIBGOUROU_EXPORT class Base64 {
 
 }
 
-#endif /* _MACARON_BASE64_H_ */
+#endif /* !_MACARON_BASE64_H_ */

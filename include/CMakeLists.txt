@@ -11,7 +11,7 @@ set(Header_Files
         "libgourou_common.h"
         "libgourou_log.h"
         "loan_token.h"
-        "user.h"
+        "user_drm.h"
 )
 source_group("Header Files" FILES "${Header_Files}")
 

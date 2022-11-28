@@ -17,8 +17,8 @@
   along with libgourou. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _USER_H_
-#define _USER_H_
+#ifndef _USER_DRM_H_
+#define _USER_DRM_H_
 
 #include <string>
 #include <map>
@@ -110,4 +110,4 @@ namespace gourou
     };
 }
 
-#endif
+#endif /* !_USER_DRM_H_ */

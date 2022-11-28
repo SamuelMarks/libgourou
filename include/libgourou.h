@@ -22,7 +22,7 @@
 
 #include "bytearray.h"
 #include "device.h"
-#include "user.h"
+#include "user_drm.h"
 #include "fulfillment_item.h"
 #include "drmprocessorclient.h"
 
@@ -246,4 +246,4 @@ namespace gourou
     };
 }
 
-#endif
+#endif /* ! _LIBGOUROU_H_ */

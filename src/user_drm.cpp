@@ -20,7 +20,7 @@
 #include <libgourou.h>
 #include <libgourou_common.h>
 #include <libgourou_log.h>
-#include <user.h>
+#include <user_drm.h>
 
 namespace gourou {
     User::User(DRMProcessor* processor):processor(processor) {}
