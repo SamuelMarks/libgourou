@@ -82,7 +82,7 @@ cpack_add_component(
 configure_package_config_file(
         "${CMAKE_SOURCE_DIR}/cmake/Config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        INSTALL_DESTINATION "lib/cmake/example"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}"
         NO_SET_AND_CHECK_MACRO
         NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
@@ -94,4 +94,4 @@ write_basic_package_version_file(
         COMPATIBILITY AnyNewerVersion
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME_NO_PREFIX}")
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
