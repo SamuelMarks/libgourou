@@ -67,10 +67,10 @@ static std::string getpass(const char *prompt, bool show_asterisk=false)
   const char BACKSPACE=127;
   const char RETURN=10;
 
-  std::string password;
+  std::string password="";
   unsigned char ch=0;
 
-  std::cout <<prompt;
+  std::cout << prompt;
 
   while((ch=getch())!= RETURN)
     {
@@ -79,7 +79,7 @@ static std::string getpass(const char *prompt, bool show_asterisk=false)
             if(password.length()!=0)
               {
                  if(show_asterisk)
-                 std::cout <<"\b \b";
+                 std::cout << "\b \b";
                  password.resize(password.length()-1);
               }
          }
@@ -87,10 +87,10 @@ static std::string getpass(const char *prompt, bool show_asterisk=false)
          {
              password+=ch;
              if(show_asterisk)
-                 std::cout <<'*';
+                 std::cout << '*';
          }
     }
-  std::cout <<std::endl;
+  std::cout << std::endl;
   return password;
 }
 
@@ -125,21 +125,21 @@ public:
 
 static void usage(const char* cmd)
 {
-    std::cout << "Create new device files used by ADEPT DRM" << std::endl;
+    std::cout << "Create new device files used by ADEPT DRM\n"
     
-    std::cout << "Usage: " << basename((char*)cmd) << " (-a|--anonymous) | ( (-u|--username) username [(-p|--password) password] ) [(-O|--output-dir) dir] [(-r|--random-serial)] [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
+              << "Usage: " << basename((char*)cmd) << " (-a|--anonymous) | ( (-u|--username) username [(-p|--password) password] ) [(-O|--output-dir) dir] [(-r|--random-serial)] [(-v|--verbose)] [(-h|--help)]\n\n"
     
-    std::cout << "  " << "-a|--anonymous"  << "\t"   << "Anonymous account, no need for username/password (Use it only with a DRM removal software)" << std::endl;
-    std::cout << "  " << "-u|--username"   << "\t\t" << "AdobeID username (ie adobe.com email account)" << std::endl;
-    std::cout << "  " << "-p|--password"   << "\t\t" << "AdobeID password (asked if not set via command line) " << std::endl;
-    std::cout << "  " << "-O|--output-dir" << "\t"   << "Optional output directory were to put result (default ./.adept). This directory must not already exists" << std::endl;
-    std::cout << "  " << "-H|--hobbes-version" << "\t"<< "Force RMSDK version to a specific value (default: version of current librmsdk)" << std::endl;
-    std::cout << "  " << "-r|--random-serial" << "\t"<< "Generate a random device serial (if not set, it will be dependent of your current configuration)" << std::endl;
-    std::cout << "  " << "-v|--verbose"    << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
-    std::cout << "  " << "-V|--version"    << "\t\t" << "Display libgourou version" << std::endl;
-    std::cout << "  " << "-h|--help"       << "\t\t" << "This help" << std::endl;
+              << "  " << "-a|--anonymous"  << "\t"   << "Anonymous account, no need for username/password (Use it only with a DRM removal software)\n"
+              << "  " << "-u|--username"   << "\t\t" << "AdobeID username (ie adobe.com email account)\n"
+              << "  " << "-p|--password"   << "\t\t" << "AdobeID password (asked if not set via command line) \n"
+              << "  " << "-O|--output-dir" << "\t"   << "Optional output directory were to put result (default ./.adept). This directory must not already exists\n"
+              << "  " << "-H|--hobbes-version" << "\t"<< "Force RMSDK version to a specific value (default: version of current librmsdk)\n"
+              << "  " << "-r|--random-serial" << "\t"<< "Generate a random device serial (if not set, it will be dependent of your current configuration)\n"
+              << "  " << "-v|--verbose"    << "\t\t" << "Increase verbosity, can be set multiple times\n"
+              << "  " << "-V|--version"    << "\t\t" << "Display libgourou version\n"
+              << "  " << "-h|--help"       << "\t\t" << "This help\n"
 
-    std::cout << std::endl;
+              << std::endl;
 }
 
 static const char* abspath(const char* filename)
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
     int verbose = gourou::DRMProcessor::getLogLevel();
     bool anonymous = false;
     
-    while (1) {
+    while (true) {
 	int option_index = 0;
 	static struct option long_options[] = {
 	    {"anonymous",     no_argument      , 0,  'a' },
@@ -255,8 +255,8 @@ int main(int argc, char** argv)
 	
 	while (true)
 	{
-	    std::cout << "!! Warning !! : " << outputDir << " already exists." << std::endl;
-	    std::cout << "All your data will be overwrite. Would you like to continue ? [y/N] " << std::flush ;
+	    std::cout << "!! Warning !! : " << outputDir << " already exists.\n"
+	              << "All your data will be overwrite. Would you like to continue ? [y/N] " << std::flush ;
 	    key = getchar();
 	    if (key == 'n' || key == 'N' || key == '\n' || key == '\r')
 		goto end;
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 	char prompt[128];
 	std::snprintf(prompt, sizeof(prompt), "Enter password for <%s> : ", username);
 	pass = getpass((const char*)prompt, false);
-	password = pass.c_str();
+	password = strdup(pass.c_str());
     }
         
     ADEPTActivate activate;

@@ -208,14 +208,14 @@ private:
 
     void displayLoanList()
     {
-	if (!loanedBooks.size())
+	if (loanedBooks.empty())
 	{
-	    std::cout << "Any book loaned" << std::endl;
+	    std::cout << "No books are loaned" << std::endl;
 	    return;
 	}
 
 	struct Loan* loan;
-	unsigned int maxSizeBookName=0;
+	std::string::size_type maxSizeBookName=0;
 	// Compute max size
 	for (const auto& kv : loanedBooks)
 	{
@@ -232,28 +232,29 @@ private:
 	// std::cout << "  ID      Book      Expiration" << std::endl;
 	// std::cout << "------------------------------" << std::endl;
 
-	int fillID, fillBookName, fillExpiration=(20 - 10)/2;
+	int fillID, fillExpiration=(20 - 10)/2;
+    std::string::size_type fillBookName;
 	
 	fillID = (ID_HASH_SIZE - 2) / 2;
 	fillBookName = (maxSizeBookName - 4) / 2;
 
 	std::cout.width (fillID);
-	std::cout << "";
-	std::cout << "ID" ;
+	std::cout << ""
+	          << "ID" ;
 	std::cout.width (fillID);
-	std::cout << "";
-	std::cout << "    " ;
+	std::cout << ""
+	          << "    " ;
 	
-	std::cout.width (fillBookName);
-	std::cout << "";
-	std::cout << "Book" ;
-	std::cout.width (fillBookName);
-	std::cout << "";
-	std::cout << "    " ;
+	std::cout.width ((long)fillBookName);
+	std::cout << ""
+	          << "Book" ;
+	std::cout.width ((long)fillBookName);
+	std::cout << ""
+	          << "    " ;
 
 	std::cout.width (fillExpiration);
-	std::cout << "";
-	std::cout << "Exipration";
+	std::cout << ""
+	          << "Expiration";
 	std::cout.width (fillExpiration);
 	std::cout << "" << std::endl;
 
@@ -268,8 +269,8 @@ private:
 	{
 	    loan = kv.second;
 
-	    std::cout << kv.first;
-	    std::cout << "    ";
+	    std::cout << kv.first
+	              << "    ";
 
 	    if (loan->bookName.size() > MAX_SIZE_BOOK_NAME)
 		bookName = std::string(loan->bookName.c_str(), MAX_SIZE_BOOK_NAME);
@@ -277,11 +278,11 @@ private:
 		bookName = loan->bookName;
 
 	    std::cout << bookName;
-	    std::cout.width (maxSizeBookName - bookName.size());
-	    std::cout << "";
-	    std::cout << "    ";
+	    std::cout.width ((long)(maxSizeBookName - bookName.size()));
+	    std::cout << ""
+	              << "    "
 	    
-	    std::cout << loan->validity << std::endl;
+	              << loan->validity << std::endl;
 	}
 
 	std::cout << std::endl;
@@ -335,24 +336,24 @@ private:
 
 static void usage(const char* cmd)
 {
-    std::cout << "Manage loaned books" << std::endl;
+    std::cout << "Manage loaned books\n"
     
-    std::cout << "Usage: " << basename((char*)cmd) << " [(-d|--activation-dir) dir] (-l|--list)|(-D|--delete loanID)|(-R|--delete loanID) [(-v|--verbose)] [(-h|--help)]" << std::endl << std::endl;
+              << "Usage: " << basename((char*)cmd) << " [(-d|--activation-dir) dir] (-l|--list)|(-D|--delete loanID)|(-R|--delete loanID) [(-v|--verbose)] [(-h|--help)]\n\n"
     
-    std::cout << "  " << "-d|--activation-dir"  << "\t"   << "Directory of device.xml/activation.xml and device key" << std::endl;
-    std::cout << "  " << "-l|--list"            << "\t\t" << "List all loaned books" << std::endl;
-    std::cout << "  " << "-r|--return"          << "\t\t" << "Return a loaned book" << std::endl;
-    std::cout << "  " << "-D|--delete"          << "\t\t" << "Delete a loan entry without returning it" << std::endl;
-    std::cout << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
-    std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
-    std::cout << "  " << "-h|--help"            << "\t\t" << "This help" << std::endl;
+              << "  " << "-d|--activation-dir"  << "\t"   << "Directory of device.xml/activation.xml and device key\n"
+              << "  " << "-l|--list"            << "\t\t" << "List all loaned books\n"
+              << "  " << "-r|--return"          << "\t\t" << "Return a loaned book\n"
+              << "  " << "-D|--delete"          << "\t\t" << "Delete a loan entry without returning it\n"
+              << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times\n"
+              << "  " << "-V|--version"         << "\t\t" << "Display libgourou version\n"
+              << "  " << "-h|--help"            << "\t\t" << "This help\n"
 
-    std::cout << std::endl;
-    std::cout << "Activation directory is optional. If not set, it's looked into :" << std::endl;
-    std::cout << "  * Current directory" << std::endl;
-    std::cout << "  * .adept" << std::endl;
-    std::cout << "  * adobe-digital-editions directory" << std::endl;
-    std::cout << "  * .adobe-digital-editions directory" << std::endl;
+              << '\n'
+              << "Activation directory is optional. If not set, it's looked into :\n"
+              << "  * Current directory\n"
+              << "  * .adept\n"
+              << "  * adobe-digital-editions directory\n"
+              << "  * .adobe-digital-editions directory" << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -363,7 +364,7 @@ int main(int argc, char** argv)
     int verbose = gourou::DRMProcessor::getLogLevel();
     int actions = 0;
     
-    while (1) {
+    while (true) {
 	int option_index = 0;
 	static struct option long_options[] = {
 	    {"activation-dir",   required_argument, 0,  'd' },

@@ -182,28 +182,28 @@ private:
 
 static void usage(const char* cmd)
 {
-    std::cout << "Download EPUB file from ACSM request file" << std::endl;
+    std::cout << "Download EPUB file from ACSM request file\n"
     
-    std::cout << "Usage: " << basename((char*)cmd) << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-r|--resume)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)" << std::endl << std::endl;
-    
-    std::cout << "  " << "-d|--device-file"     << "\t"   << "device.xml file from eReader" << std::endl;
-    std::cout << "  " << "-a|--activation-file" << "\t"   << "activation.xml file from eReader" << std::endl;
-    std::cout << "  " << "-k|--device-key-file" << "\t"   << "private device key file (eg devicesalt/devkey.bin) from eReader" << std::endl;
-    std::cout << "  " << "-O|--output-dir"      << "\t"   << "Optional output directory were to put result (default ./)" << std::endl;
-    std::cout << "  " << "-o|--output-file"     << "\t"   << "Optional output filename (default <title.(epub|pdf|der)>)" << std::endl;
-    std::cout << "  " << "-f|--acsm-file"       << "\t"   << "ACSM request file for epub download" << std::endl;
-    std::cout << "  " << "-e|--export-private-key"<< "\t" << "Export private key in DER format" << std::endl;
-    std::cout << "  " << "-r|--resume"          << "\t\t" << "Try to resume download (in case of previous failure)" << std::endl;
-    std::cout << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times" << std::endl;
-    std::cout << "  " << "-V|--version"         << "\t\t" << "Display libgourou version" << std::endl;
-    std::cout << "  " << "-h|--help"            << "\t\t" << "This help" << std::endl;
+              << "Usage: " << basename((char*)cmd) << " [(-d|--device-file) device.xml] [(-a|--activation-file) activation.xml] [(-k|--device-key-file) devicesalt] [(-O|--output-dir) dir] [(-o|--output-file) output(.epub|.pdf|.der)] [(-r|--resume)] [(-v|--verbose)] [(-h|--help)] (-f|--acsm-file) file.acsm|(-e|--export-private-key)\n\n"
 
-    std::cout << std::endl;
-    std::cout << "Device file, activation file and device key file are optionals. If not set, they are looked into :" << std::endl;
-    std::cout << "  * Current directory" << std::endl;
-    std::cout << "  * .adept" << std::endl;
-    std::cout << "  * adobe-digital-editions directory" << std::endl;
-    std::cout << "  * .adobe-digital-editions directory" << std::endl;
+              << "  " << "-d|--device-file"     << "\t"   << "device.xml file from eReader\n"
+              << "  " << "-a|--activation-file" << "\t"   << "activation.xml file from eReader\n"
+              << "  " << "-k|--device-key-file" << "\t"   << "private device key file (eg devicesalt/devkey.bin) from eReader\n"
+              << "  " << "-O|--output-dir"      << "\t"   << "Optional output directory were to put result (default ./)\n"
+              << "  " << "-o|--output-file"     << "\t"   << "Optional output filename (default <title.(epub|pdf|der)>)\n"
+              << "  " << "-f|--acsm-file"       << "\t"   << "ACSM request file for epub download\n"
+              << "  " << "-e|--export-private-key"<< "\t" << "Export private key in DER format\n"
+              << "  " << "-r|--resume"          << "\t\t" << "Try to resume download (in case of previous failure)\n"
+              << "  " << "-v|--verbose"         << "\t\t" << "Increase verbosity, can be set multiple times\n"
+              << "  " << "-V|--version"         << "\t\t" << "Display libgourou version\n"
+              << "  " << "-h|--help"            << "\t\t" << "This help\n"
+
+              << '\n'
+              << "Device file, activation file and device key file are optionals. If not set, they are looked into :\n"
+              << "  * Current directory\n"
+              << "  * .adept\n"
+              << "  * adobe-digital-editions directory\n"
+              << "  * .adobe-digital-editions directory" << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -213,7 +213,7 @@ int main(int argc, char** argv)
     const char** files[] = {&devicekeyFile, &deviceFile, &activationFile};
     int verbose = gourou::DRMProcessor::getLogLevel();
 
-    while (1) {
+    while (true) {
 	int option_index = 0;
 	static struct option long_options[] = {
 	    {"device-file",      required_argument, 0,  'd' },
