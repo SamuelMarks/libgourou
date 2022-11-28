@@ -21,16 +21,17 @@ source_group("Source Files" FILES "${Source_Files}")
 add_library("${LIBRARY_NAME}" "${Header_Files}" "${Source_Files}")
 
 find_package(OpenSSL REQUIRED)
-target_link_libraries("${LIBRARY_NAME}" PRIVATE "OpenSSL::SSL")
-
 find_package(libzip CONFIG REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 
 target_link_libraries(
         "${LIBRARY_NAME}"
         PRIVATE
         "${PROJECT_NAME_NO_PREFIX}_compiler_flags"
-        "libzip::zip"
         "${PROJECT_NAME_NO_PREFIX}_include"
+        "libzip::zip"
+        "OpenSSL::SSL"
+        "CURL::libcurl"
 )
 
 include(GNUInstallDirs)
