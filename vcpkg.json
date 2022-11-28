@@ -2,9 +2,10 @@
   "name": "libgourou",
   "version-string": "0.8.0",
   "dependencies": [
+    "curl",
+    "libzip",
     "openssl",
     "pugixml",
-    "libzip",
     "updfparser"
   ]
 }
