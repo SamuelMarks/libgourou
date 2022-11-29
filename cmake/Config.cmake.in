@@ -2,3 +2,13 @@
 @PACKAGE_INIT@
 
 include ( "${CMAKE_CURRENT_LIST_DIR}/libgourouTargets.cmake" )
+
+
+# Remove the follow lines once this issue is resolved https://gitlab.kitware.com/cmake/cmake/-/issues/20511
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(CURL)
+find_dependency(libzip)
+find_dependency(OpenSSL)
+find_dependency(pugixml)
