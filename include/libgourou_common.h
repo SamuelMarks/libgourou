@@ -317,7 +317,7 @@ namespace gourou
      */
     static inline std::string extractIdFromUUID(const std::string& uuid)
     {
-	unsigned int i = 0;
+	unsigned i = 0;
 	std::string res;
 	
 	if (uuid.find("urn:uuid:") == 0)
@@ -356,7 +356,7 @@ namespace gourou
     /**
      * @brief Write data in a file. If it already exists, it's truncated
      */
-    static inline void writeFile(const std::string &path, const unsigned char* data, unsigned int length)
+    static inline void writeFile(const std::string &path, const unsigned char* data, unsigned length)
     {
 	int fd = createNewFile(path);
 	
@@ -385,7 +385,7 @@ namespace gourou
     /**
      * Read data from file
      */
-    static inline void readFile(const std::string &path, const unsigned char* data, unsigned int length)
+    static inline void readFile(const std::string &path, const unsigned char* data, unsigned length)
     {
 	int fd = open(path.c_str(), O_RDONLY);
 
@@ -458,13 +458,13 @@ namespace gourou
 	return 0;
     }
 
-    static inline void dumpBuffer(GOUROU_LOG_LEVEL level, const char* title, const unsigned char* data, unsigned int len)
+    static inline void dumpBuffer(GOUROU_LOG_LEVEL level, const char* title, const unsigned char* data, unsigned len)
     {
 	if (gourou::logLevel < level)
 	    return;
 	
 	printf("%s", title);
-	for(unsigned int i=0; i<len; i++)
+	for(unsigned i=0; i<len; i++)
 	{
 	    if (i && !(i%16)) printf("\n");
 	    printf("%02x ", data[i]);

@@ -162,12 +162,12 @@ namespace gourou
 	/**
 	 * @brief In place encrypt data with private device key
 	 */
-	ByteArray encryptWithDeviceKey(const unsigned char* data, unsigned int len);
+	ByteArray encryptWithDeviceKey(const unsigned char* data, unsigned len);
 
 	/**
 	 * @brief In place decrypt data with private device key
 	 */
-	ByteArray decryptWithDeviceKey(const unsigned char* data, unsigned int len);
+	ByteArray decryptWithDeviceKey(const unsigned char* data, unsigned len);
 
 	/**
 	 * @brief Return base64 encoded value of RSA public key
@@ -239,7 +239,7 @@ namespace gourou
 	void decryptADEPTKey(const std::string& encryptedKey, unsigned char* decryptedKey);
 	void removeEPubDRM(const std::string& filenameIn, const std::string& filenameOut, const unsigned char* encryptionKey, unsigned encryptionKeySize);
 	void generatePDFObjectKey(int version,
-				  const unsigned char* masterKey, unsigned int masterKeyLength,
+				  const unsigned char* masterKey, unsigned masterKeyLength,
 				  int objectId, int objectGenerationNumber,
 				  unsigned char* keyOut);
 	void removePDFDRM(const std::string& filenameIn, const std::string& filenameOut, const unsigned char* encryptionKey, unsigned encryptionKeySize);

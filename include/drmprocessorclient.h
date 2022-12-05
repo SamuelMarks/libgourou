@@ -50,7 +50,7 @@ namespace gourou
 	 * @param data            Data to digest
 	 * @param length          Length of data
 	 */
-	virtual void digestUpdate(void* handler, unsigned char* data, unsigned int length) = 0;
+	virtual void digestUpdate(void* handler, unsigned char* data, unsigned length) = 0;
 
 	/**
 	 * @brief Finalize digest with remained buffered data and destroy handler
@@ -68,7 +68,7 @@ namespace gourou
 	 * @param length          Length of data
 	 * @param digestOut       Digest result (buffer must be pre allocated with right size)
 	 */
-	virtual void digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut) = 0;
+	virtual void digest(const std::string& digestName, unsigned char* data, unsigned length, unsigned char* digestOut) = 0;
     };
 
     class RandomInterface
@@ -80,7 +80,7 @@ namespace gourou
 	 * @param bytesOut        Buffer to fill with random bytes
 	 * @param length          Length of bytesOut
 	 */
-	virtual void randBytes(unsigned char* bytesOut, unsigned int length) = 0;
+	virtual void randBytes(unsigned char* bytesOut, unsigned length) = 0;
     };
 
     class HTTPInterface
@@ -122,7 +122,7 @@ namespace gourou
 	 * @param dataLength     Data length
 	 * @param res            Encryption result (pre allocated buffer)
 	 */
-	virtual void RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+	virtual void RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				       const RSA_KEY_TYPE keyType, const std::string& password,
 				       const unsigned char* data, unsigned dataLength,
 				       unsigned char* res) = 0;
@@ -138,7 +138,7 @@ namespace gourou
 	 * @param dataLength     Data length
 	 * @param res            Encryption result (pre allocated buffer)
 	 */
-	virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+	virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				       const RSA_KEY_TYPE keyType, const std::string& password,
 				       const unsigned char* data, unsigned dataLength,
 				       unsigned char* res) = 0;
@@ -154,7 +154,7 @@ namespace gourou
 	 * @param dataLength     Data length
 	 * @param res            Encryption result (pre allocated buffer)
 	 */
-	virtual void RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+	virtual void RSAPublicEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				      const RSA_KEY_TYPE keyType,
 				      const unsigned char* data, unsigned dataLength,
 				      unsigned char* res) = 0;
@@ -182,7 +182,7 @@ namespace gourou
 	 * @param keyOut         Pre allocated buffer (if *keyOut != 0). If *keyOut is 0, memory is internally allocated (must be freed)
 	 * @param keyOutLength   Length of result
 	 */
-	virtual void extractRSAPublicKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength) = 0;
+	virtual void extractRSAPublicKey(void* handler, unsigned char** keyOut, unsigned* keyOutLength) = 0;
 
 	/**
 	 * @brief Extract private key (big number) from RSA handler
@@ -191,7 +191,7 @@ namespace gourou
 	 * @param keyOut         Pre allocated buffer (if *keyOut != 0). If *keyOut is 0, memory is internally allocated (must be freed)
 	 * @param keyOutLength   Length of result
 	 */
-	virtual void extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength) = 0;
+	virtual void extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned* keyOutLength) = 0;
 
 	/**
 	 * @brief Extract certificate from PKCS12 blob
@@ -203,9 +203,9 @@ namespace gourou
 	 * @param certOut        Result certificate
 	 * @param certOutLength  Result certificate length
 	 */
-	virtual void extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+	virtual void extractCertificate(const unsigned char* RSAKey, unsigned RSAKeyLength,
 					const RSA_KEY_TYPE keyType, const std::string& password,
-					unsigned char** certOut, unsigned int* certOutLength) = 0;
+					unsigned char** certOut, unsigned* certOutLength) = 0;
     };
 
     class CryptoInterface
@@ -236,10 +236,10 @@ namespace gourou
 	 * @param dataOutLength  Length of encrypted data
 	 */
 	virtual void encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			     const unsigned char* key, unsigned int keyLength,
-			     const unsigned char* iv, unsigned int ivLength,
-			     const unsigned char* dataIn, unsigned int dataInLength,
-			     unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+			     const unsigned char* key, unsigned keyLength,
+			     const unsigned char* iv, unsigned ivLength,
+			     const unsigned char* dataIn, unsigned dataInLength,
+			     unsigned char* dataOut, unsigned* dataOutLength) = 0;
 
 	/**
 	 * @brief Init encryption
@@ -253,8 +253,8 @@ namespace gourou
 	 * @return AES handler
 	 */
 	virtual void* encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-				  const unsigned char* key, unsigned int keyLength,
-				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
+				  const unsigned char* key, unsigned keyLength,
+				  const unsigned char* iv=0, unsigned ivLength=0) = 0;
 
 	/**
 	 * @brief Encrypt data
@@ -265,8 +265,8 @@ namespace gourou
 	 * @param dataOut        Encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+				   unsigned char* dataOut, unsigned* dataOutLength) = 0;
 
 	/**
 	 * @brief Finalize encryption (pad and encrypt last block if needed)
@@ -276,7 +276,7 @@ namespace gourou
 	 * @param dataOut        Last block of encrypted data
 	 * @param dataOutLength  Length of encrypted data
 	 */
-	virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned* dataOutLength) = 0;
 
 	/**
 	 * @brief Do decryption. If length of data is not multiple of block size, PKCS#5 padding is done
@@ -293,10 +293,10 @@ namespace gourou
 	 * @param dataOutLength  Length of encrypted data
 	 */
 	virtual void decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			     const unsigned char* key, unsigned int keyLength,
-			     const unsigned char* iv, unsigned int ivLength,
-			     const unsigned char* dataIn, unsigned int dataInLength,
-			     unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+			     const unsigned char* key, unsigned keyLength,
+			     const unsigned char* iv, unsigned ivLength,
+			     const unsigned char* dataIn, unsigned dataInLength,
+			     unsigned char* dataOut, unsigned* dataOutLength) = 0;
 
 	/**
 	 * @brief Init decryption
@@ -310,8 +310,8 @@ namespace gourou
 	 * @return AES handler
 	 */
 	virtual void* decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-				  const unsigned char* key, unsigned int keyLength,
-				  const unsigned char* iv=0, unsigned int ivLength=0) = 0;
+				  const unsigned char* key, unsigned keyLength,
+				  const unsigned char* iv=0, unsigned ivLength=0) = 0;
 
 	/**
 	 * @brief Decrypt data
@@ -322,8 +322,8 @@ namespace gourou
 	 * @param dataOut        Decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-				   unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+				   unsigned char* dataOut, unsigned* dataOutLength) = 0;
 	/**
 	 * @brief Finalize decryption (decrypt last block and remove padding if it is set).
 	 * Destroy handler at the end
@@ -332,7 +332,7 @@ namespace gourou
 	 * @param dataOut        Last block decrypted data
 	 * @param dataOutLength  Length of decrypted data
 	 */
-	virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength) = 0;
+	virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned* dataOutLength) = 0;
     };
 
 

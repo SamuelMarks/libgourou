@@ -66,7 +66,7 @@ const char* findFile(const char* filename, bool inDefaultDirs)
 
     if (!inDefaultDirs) return 0;
     
-    for (int i=0; i<(int)ARRAY_SIZE(defaultDirs); i++)
+    for (unsigned i=0; i<(unsigned)ARRAY_SIZE(defaultDirs); i++)
     {
 	std::string path = std::string(defaultDirs[i]) + filename;
 	if (fileExists(path.c_str()))

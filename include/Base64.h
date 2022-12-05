@@ -50,10 +50,10 @@ LIBGOUROU_EXPORT class Base64 {
       '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    size_t in_len = data.size();
-    size_t out_len = 4 * ((in_len + 2) / 3);
+    std::string::size_type in_len = data.size();
+    std::string::size_type out_len = 4 * ((in_len + 2) / 3);
     std::string ret(out_len, '\0');
-    size_t i;
+    std::string::size_type i;
     char *p = const_cast<char*>(ret.c_str());
 
     for (i = 0; i < in_len - 2; i += 3) {
@@ -102,16 +102,16 @@ LIBGOUROU_EXPORT class Base64 {
       64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
     };
 
-    size_t in_len = input.size();
+    std::string::size_type in_len = input.size();
     if (in_len % 4 != 0) return "Input data size is not a multiple of 4";
 
-    size_t out_len = in_len / 4 * 3;
+    std::string::size_type out_len = in_len / 4 * 3;
     if (input[in_len - 1] == '=') out_len--;
     if (input[in_len - 2] == '=') out_len--;
 
     out.resize(out_len);
 
-    for (size_t i = 0, j = 0; i < in_len;) {
+    for (std::string::size_type i = 0, j = 0; i < in_len;) {
       uint32_t a = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
       uint32_t b = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
       uint32_t c = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];

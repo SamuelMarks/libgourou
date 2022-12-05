@@ -45,27 +45,27 @@ public:
     
     /* Digest interface */
     virtual void* createDigest(const std::string& digestName);
-    virtual void digestUpdate(void* handler, unsigned char* data, unsigned int length);
+    virtual void digestUpdate(void* handler, unsigned char* data, unsigned length);
     virtual void digestFinalize(void* handler,unsigned char* digestOut);
-    virtual void digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut);
+    virtual void digest(const std::string& digestName, unsigned char* data, unsigned length, unsigned char* digestOut);
 
     /* Random interface */
-    virtual void randBytes(unsigned char* bytesOut, unsigned int length);
+    virtual void randBytes(unsigned char* bytesOut, unsigned length);
 
     /* HTTP interface */
     virtual std::string sendHTTPRequest(const std::string& URL, const std::string& POSTData=std::string(""), const std::string& contentType=std::string(""), std::map<std::string, std::string>* responseHeaders=0, int fd=0, bool resume=false);
 
-    virtual void RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+    virtual void RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				   const RSA_KEY_TYPE keyType, const std::string& password,
 				   const unsigned char* data, unsigned dataLength,
 				   unsigned char* res);
 			    
-    virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+    virtual void RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				   const RSA_KEY_TYPE keyType, const std::string& password,
 				   const unsigned char* data, unsigned dataLength,
 				   unsigned char* res);
 
-    virtual void RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+    virtual void RSAPublicEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				  const RSA_KEY_TYPE keyType,
 				  const unsigned char* data, unsigned dataLength,
 				  unsigned char* res);
@@ -73,41 +73,41 @@ public:
     virtual void* generateRSAKey(int keyLengthBits);
     virtual void destroyRSAHandler(void* handler);
     
-    virtual void extractRSAPublicKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned int* keyOutLength);
-    virtual void extractRSAPrivateKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned int* keyOutLength);
-    virtual void extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+    virtual void extractRSAPublicKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned* keyOutLength);
+    virtual void extractRSAPrivateKey(void* RSAKeyHandler, unsigned char** keyOut, unsigned* keyOutLength);
+    virtual void extractCertificate(const unsigned char* RSAKey, unsigned RSAKeyLength,
 				    const RSA_KEY_TYPE keyType, const std::string& password,
-				    unsigned char** certOut, unsigned int* certOutLength);
+				    unsigned char** certOut, unsigned* certOutLength);
 				 
     /* Crypto interface */
     virtual void encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			 const unsigned char* key, unsigned int keyLength,
-			 const unsigned char* iv, unsigned int ivLength,
-			 const unsigned char* dataIn, unsigned int dataInLength,
-			 unsigned char* dataOut, unsigned int* dataOutLength);
+			 const unsigned char* key, unsigned keyLength,
+			 const unsigned char* iv, unsigned ivLength,
+			 const unsigned char* dataIn, unsigned dataInLength,
+			 unsigned char* dataOut, unsigned* dataOutLength);
 
     virtual void* encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			      const unsigned char* key, unsigned int keyLength,
-			      const unsigned char* iv=0, unsigned int ivLength=0);
+			      const unsigned char* key, unsigned keyLength,
+			      const unsigned char* iv=0, unsigned ivLength=0);
 
 
-    virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-				   unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void encryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+				   unsigned char* dataOut, unsigned* dataOutLength);
+    virtual void encryptFinalize(void* handler, unsigned char* dataOut, unsigned* dataOutLength);
 
     virtual void decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			 const unsigned char* key, unsigned int keyLength,
-			 const unsigned char* iv, unsigned int ivLength,
-			 const unsigned char* dataIn, unsigned int dataInLength,
-			 unsigned char* dataOut, unsigned int* dataOutLength);
+			 const unsigned char* key, unsigned keyLength,
+			 const unsigned char* iv, unsigned ivLength,
+			 const unsigned char* dataIn, unsigned dataInLength,
+			 unsigned char* dataOut, unsigned* dataOutLength);
 
     virtual void* decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-			      const unsigned char* key, unsigned int keyLength,
-			      const unsigned char* iv=0, unsigned int ivLength=0);
+			      const unsigned char* key, unsigned keyLength,
+			      const unsigned char* iv=0, unsigned ivLength=0);
 
-    virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-			       unsigned char* dataOut, unsigned int* dataOutLength);
-    virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength);
+    virtual void decryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+			       unsigned char* dataOut, unsigned* dataOutLength);
+    virtual void decryptFinalize(void* handler, unsigned char* dataOut, unsigned* dataOutLength);
 
     /* ZIP Interface */
     virtual void* zipOpen(const std::string& path);
@@ -128,8 +128,8 @@ public:
 
 private:
 
-    void padWithPKCS1(unsigned char* out, unsigned int outLength,
-		      const unsigned char* in, unsigned int inLength);
+    void padWithPKCS1(unsigned char* out, unsigned outLength,
+		      const unsigned char* in, unsigned inLength);
     
 #if OPENSSL_VERSION_MAJOR >= 3
     OSSL_PROVIDER *legacy, *deflt;

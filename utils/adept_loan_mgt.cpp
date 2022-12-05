@@ -426,17 +426,17 @@ int main(int argc, char** argv)
 
     LoanMGT loanMGT;
 
-    int i;
+    unsigned i;
     bool hasErrors = false;
     const char* orig;
     char *filename;
-    for (i=0; i<(int)ARRAY_SIZE(files); i++)
+    for (i=0; i<(unsigned)ARRAY_SIZE(files); i++)
     {
 	orig = *files[i];
 	
 	if (activationDir)
 	{
-	    std::string path = std::string(activationDir) + std::string("/") + orig;
+	    const std::string path = std::string(activationDir) + std::string("/") + orig;
 	    filename = strdup(path.c_str());
 	}
 	else
@@ -468,7 +468,7 @@ int main(int argc, char** argv)
     ret = loanMGT.run();
     
 end:
-    for (i=0; i<(int)ARRAY_SIZE(files); i++)
+    for (i=0; i<(unsigned)ARRAY_SIZE(files); i++)
     {
 	if (*files[i])
 	    free((void*)*files[i]);

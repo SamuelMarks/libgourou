@@ -286,10 +286,10 @@ int main(int argc, char** argv)
 
     ACSMDownloader downloader;
 
-    int i;
+    unsigned i;
     bool hasErrors = false;
     const char* orig;
-    for (i=0; i<(int)ARRAY_SIZE(files); i++)
+    for (i=0; i<(unsigned)ARRAY_SIZE(files); i++)
     {
 	orig = *files[i];
 	*files[i] = findFile(*files[i]);
@@ -325,7 +325,7 @@ int main(int argc, char** argv)
     ret = downloader.run();
 
 end:
-    for (i=0; i<(int)ARRAY_SIZE(files); i++)
+    for (i=0; i<(unsigned)ARRAY_SIZE(files); i++)
     {
 	if (*files[i])
 	    free((void*)*files[i]);

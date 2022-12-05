@@ -53,7 +53,15 @@ namespace gourou
 	 * @param length  Length of data
 	 * @param useMalloc If true, use malloc() instead of new[] for allocation
 	 */
-	ByteArray(unsigned int length, bool useMalloc=false);
+	ByteArray(unsigned length, bool useMalloc=false);
+
+    /**
+     * @brief Create an empty byte array of length bytes
+     *
+     * @param length  Length of data
+     * @param useMalloc If true, use malloc() instead of new[] for allocation
+     */
+    ByteArray(std::string::size_type length, bool useMalloc=false);
 
 	/**
 	 * @brief Initialize ByteArray with a copy of data
@@ -61,7 +69,7 @@ namespace gourou
 	 * @param data    Data to be copied
 	 * @param length  Length of data
 	 */
-	ByteArray(const unsigned char* data, unsigned int length);
+	ByteArray(const unsigned char* data, unsigned length);
 
 	/**
 	 * @brief Initialize ByteArray with a copy of data
@@ -126,7 +134,7 @@ namespace gourou
 	/**
 	 * @brief Append data to internal data
 	 */
-	void append(const unsigned char* data, unsigned int length);
+	void append(const unsigned char* data, unsigned length);
 
 	/**
 	 * @brief Append str to internal data
@@ -157,12 +165,12 @@ namespace gourou
 	/**
 	 * @brief Get internal data length
 	 */
-	unsigned int length() const {return _length;}
+	unsigned length() const {return _length;}
 
 	/**
 	 * @brief Get internal data length
 	 */
-	unsigned int size() const {return length();}
+	unsigned size() const {return length();}
 
 	/**
 	 * @brief Increase or decrease internal buffer
@@ -170,18 +178,18 @@ namespace gourou
 	 * @param keepData If true copy old data on new buffer, if false,
 	 * create a new buffer with random data
 	 */
-	void resize(unsigned int length, bool keepData=true);
+	void resize(unsigned length, bool keepData=true);
 
 	ByteArray& operator=(const ByteArray& other);
 	
     private:
-	void initData(const unsigned char* data, unsigned int length);
+	void initData(const unsigned char* data, unsigned length);
 	void addRef();
 	void delRef();
 
 	bool _useMalloc;
 	unsigned char* _data;
-	unsigned int _length;
+	unsigned _length;
 	static std::map<unsigned char*, int> refCounter;
     };
 }

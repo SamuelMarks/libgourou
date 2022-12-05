@@ -89,7 +89,7 @@ void* DRMProcessorClientImpl::createDigest(const std::string& digestName)
     return md_ctx;
 }
 
-void DRMProcessorClientImpl::digestUpdate(void* handler, unsigned char* data, unsigned int length)
+void DRMProcessorClientImpl::digestUpdate(void* handler, unsigned char* data, unsigned length)
 {
     if (EVP_DigestUpdate((EVP_MD_CTX *)handler, data, length) != 1)
 	EXCEPTION(gourou::CLIENT_DIGEST_ERROR, ERR_error_string(ERR_get_error(), NULL));
@@ -104,7 +104,7 @@ void DRMProcessorClientImpl::digestFinalize(void* handler, unsigned char* digest
 	EXCEPTION(gourou::CLIENT_DIGEST_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char* data, unsigned int length, unsigned char* digestOut)
+void DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char* data, unsigned length, unsigned char* digestOut)
 {
     void* handler = createDigest(digestName);
     digestUpdate(handler, data, length);
@@ -112,7 +112,7 @@ void DRMProcessorClientImpl::digest(const std::string& digestName, unsigned char
 }
 
 /* Random interface */
-void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned int length)
+void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned length)
 {
     RAND_bytes(bytesOut, length);
 }
@@ -123,12 +123,12 @@ void DRMProcessorClientImpl::randBytes(unsigned char* bytesOut, unsigned int len
 static unsigned downloadedBytes;
 
 static int downloadProgress(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
-			    curl_off_t ultotal, curl_off_t ulnow)
+			                curl_off_t ultotal, curl_off_t ulnow)
 {
 // For "big" files only
     if (dltotal >= DISPLAY_THRESHOLD && gourou::logLevel >= gourou::LG_LOG_WARN)
     {
-	int percent = 0;
+    curl_off_t percent = 0;
 	if (dltotal)
 	    percent = (dlnow * 100) / dltotal;
 
@@ -151,7 +151,7 @@ static size_t curlReadFd(void *data, size_t size, size_t nmemb, void *userp)
 {
     int fd = *(int*) userp;
 
-    size_t res = write(fd, data, size*nmemb);
+    const size_t res = write(fd, data, size*nmemb);
 
     downloadedBytes += res;
 
@@ -253,7 +253,7 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, downloadProgress);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
 
-    for (int i=0; i<HTTP_REQ_MAX_RETRY; i++)
+    for (unsigned short i=0; i<HTTP_REQ_MAX_RETRY; i++)
     {
 	prevDownloadedBytes = downloadedBytes;
 	if (downloadedBytes)
@@ -304,8 +304,8 @@ std::string DRMProcessorClientImpl::sendHTTPRequest(const std::string& URL, cons
     return std::string((char*)replyData.data(), replyData.length());
 }
 
-void DRMProcessorClientImpl::padWithPKCS1(unsigned char* out, unsigned int outLength,
-					  const unsigned char* in, unsigned int inLength)
+void DRMProcessorClientImpl::padWithPKCS1(unsigned char* out, unsigned outLength,
+					  const unsigned char* in, unsigned inLength)
 {
     if (outLength < (inLength + 3))
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, "Not enough space for PKCS1 padding");
@@ -324,7 +324,7 @@ void DRMProcessorClientImpl::padWithPKCS1(unsigned char* out, unsigned int outLe
 }
 
 
-void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 					       const RSA_KEY_TYPE keyType, const std::string& password,
 					       const unsigned char* data, unsigned dataLength,
 					       unsigned char* res)
@@ -368,7 +368,7 @@ void DRMProcessorClientImpl::RSAPrivateEncrypt(const unsigned char* RSAKey, unsi
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 					       const RSA_KEY_TYPE keyType, const std::string& password,
 					       const unsigned char* data, unsigned dataLength,
 					       unsigned char* res)
@@ -405,7 +405,7 @@ void DRMProcessorClientImpl::RSAPrivateDecrypt(const unsigned char* RSAKey, unsi
 	EXCEPTION(gourou::CLIENT_RSA_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::RSAPublicEncrypt(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+void DRMProcessorClientImpl::RSAPublicEncrypt(const unsigned char* RSAKey, unsigned RSAKeyLength,
 					      const RSA_KEY_TYPE keyType,
 					      const unsigned char* data, unsigned dataLength,
 					      unsigned char* res)
@@ -466,7 +466,7 @@ void DRMProcessorClientImpl::destroyRSAHandler(void* handler)
     free(handler);
 }
 
-void DRMProcessorClientImpl::extractRSAPublicKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength)
+void DRMProcessorClientImpl::extractRSAPublicKey(void* handler, unsigned char** keyOut, unsigned* keyOutLength)
 {
     X509_PUBKEY *x509_pubkey = 0;
     X509_PUBKEY_set(&x509_pubkey, (EVP_PKEY*)handler);
@@ -476,7 +476,7 @@ void DRMProcessorClientImpl::extractRSAPublicKey(void* handler, unsigned char** 
     X509_PUBKEY_free(x509_pubkey);
 }
 
-void DRMProcessorClientImpl::extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned int* keyOutLength)
+void DRMProcessorClientImpl::extractRSAPrivateKey(void* handler, unsigned char** keyOut, unsigned* keyOutLength)
 {
     PKCS8_PRIV_KEY_INFO * privKey = EVP_PKEY2PKCS8((EVP_PKEY*)handler);
 
@@ -485,9 +485,9 @@ void DRMProcessorClientImpl::extractRSAPrivateKey(void* handler, unsigned char**
     PKCS8_PRIV_KEY_INFO_free(privKey);
 }
 				 
-void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, unsigned int RSAKeyLength,
+void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, unsigned RSAKeyLength,
 						const RSA_KEY_TYPE keyType, const std::string& password,
-						unsigned char** certOut, unsigned int* certOutLength)
+						unsigned char** certOut, unsigned* certOutLength)
 {
     PKCS12 * pkcs12;
     EVP_PKEY* pkey = 0;
@@ -508,10 +508,10 @@ void DRMProcessorClientImpl::extractCertificate(const unsigned char* RSAKey, uns
 
 /* Crypto interface */
 void DRMProcessorClientImpl::encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-				     const unsigned char* key, unsigned int keyLength,
-				     const unsigned char* iv, unsigned int ivLength,
-				     const unsigned char* dataIn, unsigned int dataInLength,
-				     unsigned char* dataOut, unsigned int* dataOutLength)
+				     const unsigned char* key, unsigned keyLength,
+				     const unsigned char* iv, unsigned ivLength,
+				     const unsigned char* dataIn, unsigned dataInLength,
+				     unsigned char* dataOut, unsigned* dataOutLength)
 {
     void* handler = encryptInit(algo, chaining, key, keyLength, iv, ivLength);
     encryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
@@ -519,8 +519,8 @@ void DRMProcessorClientImpl::encrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
 }
 
 void* DRMProcessorClientImpl::encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-					  const unsigned char* key, unsigned int keyLength,
-					  const unsigned char* iv, unsigned int ivLength)
+					  const unsigned char* key, unsigned keyLength,
+					  const unsigned char* iv, unsigned ivLength)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     int ret = 0;
@@ -572,8 +572,8 @@ void* DRMProcessorClientImpl::encryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaini
 }
 
 void* DRMProcessorClientImpl::decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-					     const unsigned char* key, unsigned int keyLength,
-					     const unsigned char* iv, unsigned int ivLength)
+					     const unsigned char* key, unsigned keyLength,
+					     const unsigned char* iv, unsigned ivLength)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     int ret = 0;
@@ -624,8 +624,8 @@ void* DRMProcessorClientImpl::decryptInit(CRYPTO_ALGO algo, CHAINING_MODE chaini
     return ctx;
 }
 
-void DRMProcessorClientImpl::encryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-					   unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::encryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+					   unsigned char* dataOut, unsigned* dataOutLength)
 {
     int ret = EVP_EncryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
 
@@ -634,7 +634,7 @@ void DRMProcessorClientImpl::encryptUpdate(void* handler, const unsigned char* d
 }
 
 void DRMProcessorClientImpl::encryptFinalize(void* handler,
-					     unsigned char* dataOut, unsigned int* dataOutLength)
+					     unsigned char* dataOut, unsigned* dataOutLength)
 {
     int len, ret;
     
@@ -647,18 +647,18 @@ void DRMProcessorClientImpl::encryptFinalize(void* handler,
 }
 
 void DRMProcessorClientImpl::decrypt(CRYPTO_ALGO algo, CHAINING_MODE chaining,
-				     const unsigned char* key, unsigned int keyLength,
-				     const unsigned char* iv, unsigned int ivLength,
-				     const unsigned char* dataIn, unsigned int dataInLength,
-				     unsigned char* dataOut, unsigned int* dataOutLength)
+				     const unsigned char* key, unsigned keyLength,
+				     const unsigned char* iv, unsigned ivLength,
+				     const unsigned char* dataIn, unsigned dataInLength,
+				     unsigned char* dataOut, unsigned* dataOutLength)
 {
     void* handler = decryptInit(algo, chaining, key, keyLength, iv, ivLength);
     decryptUpdate(handler, dataIn, dataInLength, dataOut, dataOutLength);
     decryptFinalize(handler, dataOut+*dataOutLength, dataOutLength);
 }
 
-void DRMProcessorClientImpl::decryptUpdate(void* handler, const unsigned char* dataIn, unsigned int dataInLength,
-					   unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::decryptUpdate(void* handler, const unsigned char* dataIn, unsigned dataInLength,
+					   unsigned char* dataOut, unsigned* dataOutLength)
 {
     int ret = EVP_DecryptUpdate((EVP_CIPHER_CTX*)handler, dataOut, (int*)dataOutLength, dataIn, dataInLength);
 
@@ -666,7 +666,7 @@ void DRMProcessorClientImpl::decryptUpdate(void* handler, const unsigned char* d
        EXCEPTION(gourou::CLIENT_CRYPT_ERROR, ERR_error_string(ERR_get_error(), NULL));
 }
 
-void DRMProcessorClientImpl::decryptFinalize(void* handler, unsigned char* dataOut, unsigned int* dataOutLength)
+void DRMProcessorClientImpl::decryptFinalize(void* handler, unsigned char* dataOut, unsigned* dataOutLength)
 {
     int len, ret;
 
@@ -746,7 +746,7 @@ void DRMProcessorClientImpl::zipClose(void* handler)
 void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray& result,
 				     int wbits)
 {
-    unsigned int dataSize = data.size()*2;
+    unsigned dataSize = data.size()*2;
     unsigned char* buffer = new unsigned char[dataSize];
     
     z_stream infstream;
@@ -793,7 +793,7 @@ void DRMProcessorClientImpl::inflate(gourou::ByteArray& data, gourou::ByteArray&
 void DRMProcessorClientImpl::deflate(gourou::ByteArray& data, gourou::ByteArray& result,
 				     int wbits, int compressionLevel)
 {
-    unsigned int dataSize = data.size();
+    unsigned dataSize = data.size();
     unsigned char* buffer = new unsigned char[dataSize];
     
     z_stream defstream;

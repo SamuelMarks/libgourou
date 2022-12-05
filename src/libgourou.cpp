@@ -86,7 +86,7 @@ namespace gourou
     
     void DRMProcessor::pushString(void* sha_ctx, const std::string& string)
     {
-	int length = string.length();
+	std::string::size_type length = string.length();
 	uint16_t nlength = htons(length);
 	char c;
 
@@ -95,7 +95,7 @@ namespace gourou
 	
 	client->digestUpdate(sha_ctx, (unsigned char*)&nlength, sizeof(nlength));
 
-	for(int i=0; i<length; i++)
+	for(std::string::size_type i=0; i<length; i++)
 	{
 	    c = string[i];
 	    client->digestUpdate(sha_ctx, (unsigned char*)&c, 1);
@@ -144,8 +144,8 @@ namespace gourou
 	    // If we have a namespace for the first time, put it to hash
 	    if (name.find(':') != std::string::npos)
 	    {
-		size_t nsIndex = name.find(':');
-		std::string nodeNS = name.substr(0, nsIndex);
+		const size_t nsIndex = name.find(':');
+		const std::string nodeNS = name.substr(0, nsIndex);
 
 		pushTag(sha_ctx, ASN_NS_TAG);
 		pushString(sha_ctx, nsHash[nodeNS]);
@@ -333,7 +333,7 @@ namespace gourou
 
 	ByteArray deviceKey(device->getDeviceKey(), Device::DEVICE_KEY_SIZE);
 	unsigned char* pkcs12 = 0;
-	unsigned int pkcs12Length;
+	unsigned pkcs12Length;
 	ByteArray pkcs12Cert = ByteArray::fromBase64(user->getPKCS12());
 	
 	client->extractCertificate(pkcs12Cert.data(), pkcs12Cert.length(),
@@ -367,14 +367,14 @@ namespace gourou
     {
 	pugi::xml_document authReq;
 	buildAuthRequest(authReq);
-	std::string authURL = operatorURL;
-	unsigned int fulfillPos = authURL.rfind("Fulfill");
+	std::string authURL = std::move(operatorURL);
+    const std::string::size_type fulfillPos = authURL.rfind("Fulfill");
 	if (fulfillPos == (authURL.size() - (sizeof("Fulfill")-1)))
 	    authURL = authURL.substr(0, fulfillPos-1);
-	ByteArray replyData = sendRequest(authReq, authURL + "/Auth");
+	const ByteArray replyData = sendRequest(authReq, authURL + "/Auth");
 
 	pugi::xml_document initLicReq;
-	std::string activationURL = user->getProperty("//adept:activationURL");
+	const std::string activationURL = user->getProperty("//adept:activationURL");
 	buildInitLicenseServiceRequest(initLicReq, authURL);
 	sendRequest(initLicReq, activationURL + "/InitLicenseService");
     }
@@ -857,10 +857,10 @@ namespace gourou
 	sendRequest(returnReq, operatorURL + "/LoanReturn");
     }
 
-    ByteArray DRMProcessor::encryptWithDeviceKey(const unsigned char* data, unsigned int len)
+    ByteArray DRMProcessor::encryptWithDeviceKey(const unsigned char* data, unsigned len)
     {
 	const unsigned char* deviceKey = device->getDeviceKey();
-	unsigned int outLen;
+	unsigned outLen;
 	int remain = 0;
 	if ((len % 16))
 	    remain = 16 - (len%16);
@@ -883,9 +883,9 @@ namespace gourou
     }
 
     /* First 16 bytes of data is IV for CBC chaining */
-    ByteArray DRMProcessor::decryptWithDeviceKey(const unsigned char* data, unsigned int len)
+    ByteArray DRMProcessor::decryptWithDeviceKey(const unsigned char* data, unsigned len)
     {
-	unsigned int outLen;
+	unsigned outLen;
 	const unsigned char* deviceKey = device->getDeviceKey();
 	unsigned char* decrypted_data = new unsigned char[len-16];
 
@@ -904,7 +904,7 @@ namespace gourou
     std::string DRMProcessor::serializeRSAPublicKey(void* rsa)
     {
 	unsigned char* data = 0;
-	unsigned int len;
+	unsigned len;
 	
 	client->extractRSAPublicKey(rsa, &data, &len);
 
@@ -918,7 +918,7 @@ namespace gourou
     std::string DRMProcessor::serializeRSAPrivateKey(void* rsa)
     {
 	unsigned char* data = 0;
-	unsigned int len;
+	unsigned len;
 	
 	client->extractRSAPrivateKey(rsa, &data, &len);
 
@@ -973,7 +973,7 @@ namespace gourou
     std::string DRMProcessor::encryptedKeyFirstPass(pugi::xml_document& rightsDoc, const std::string& encryptedKey, const std::string& keyType, ITEM_TYPE type)
     {
 	unsigned char digest[32], key[16], iv[16];
-	unsigned int dataOutLength;
+	unsigned dataOutLength;
 	std::string id;
 		
 	client->digest("SHA256", (unsigned char*)keyType.c_str(), keyType.size(), digest);
@@ -1013,7 +1013,7 @@ namespace gourou
 	if (deviceId.size() < sizeof(iv) || fulfillmentId.size() < sizeof(iv) || voucherId.size() < sizeof(iv))
 	    EXCEPTION(DRM_ERR_ENCRYPTION_KEY_FP, "One id has a bad length");
 
-	for(unsigned int i=0; i<sizeof(iv); i++)
+	for(unsigned i=0; i<sizeof(iv); i++)
 	    iv[i] = _deviceId[i] ^ _fulfillmentId[i] ^ _voucherId[i];
 
 	ByteArray arrayEncryptedKey = ByteArray::fromBase64(encryptedKey);
@@ -1024,8 +1024,8 @@ namespace gourou
 	unsigned char* clearRSAKey = new unsigned char[arrayEncryptedKey.size()];
 	
 	client->decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
-			(const unsigned char*)key, (unsigned int)sizeof(key),
-			(const unsigned char*)iv, (unsigned int)sizeof(iv),
+			(const unsigned char*)key, (unsigned)sizeof(key),
+			(const unsigned char*)iv, (unsigned)sizeof(iv),
 			(const unsigned char*)arrayEncryptedKey.data(), arrayEncryptedKey.size(),
 			(unsigned char*)clearRSAKey, &dataOutLength);
 
@@ -1033,7 +1033,7 @@ namespace gourou
 
 	/* Last block could be 0x10*16 which is OpenSSL padding, remove it if it's the case */
 	bool skipLastLine = true;
-	for(unsigned int i=dataOutLength-16; i<dataOutLength; i++)
+	for(unsigned i=dataOutLength-16; i<dataOutLength; i++)
 	{
 	    if (clearRSAKey[i] != 0x10)
 	    {
@@ -1121,7 +1121,7 @@ namespace gourou
 		ByteArray clearData(zipData.length()-16+1, true); /* Reserve 1 byte for 'Z' */
 		unsigned char* _clearData = clearData.data();
 		gourou::ByteArray inflateData(true);
-		unsigned int dataOutLength;
+		unsigned dataOutLength;
 
 		client->decrypt(CryptoInterface::ALGO_AES, CryptoInterface::CHAIN_CBC,
 				decryptedKey+sizeof(decryptedKey)-16, 16, /* Key */
@@ -1173,7 +1173,7 @@ namespace gourou
     }
     
     void DRMProcessor::generatePDFObjectKey(int version,
-					    const unsigned char* masterKey, unsigned int masterKeyLength,
+					    const unsigned char* masterKey, unsigned masterKeyLength,
 					    int objectId, int objectGenerationNumber,
 					    unsigned char* keyOut)
     {
@@ -1243,7 +1243,7 @@ namespace gourou
 		
 		std::string value = licenseObject->value();
 		// Pad with '='
-		while ((value.size() % 4))
+		while (value.size() % 4)
 		    value += "=";
 		ByteArray zippedData = ByteArray::fromBase64(value);
 
@@ -1334,9 +1334,9 @@ namespace gourou
 		    string = ((uPDFParser::String*) dictData)->unescapedValue();
 		    
 		    unsigned char* encryptedData = (unsigned char*)string.c_str();
-		    unsigned int dataLength = string.size();
+            const std::string::size_type dataLength = string.size();
 		    unsigned char* clearData = new unsigned char[dataLength];
-		    unsigned int dataOutLength;
+		    unsigned dataOutLength;
 
 		    GOUROU_LOG(DEBUG, "Decrypt string " << dictIt->first << " " << dataLength);
 
@@ -1367,9 +1367,9 @@ namespace gourou
 
 		stream = (uPDFParser::Stream*) (*datasIt);
 		unsigned char* encryptedData = stream->data();
-		unsigned int dataLength = stream->dataLength();
+		unsigned dataLength = stream->dataLength();
 		unsigned char* clearData = new unsigned char[dataLength];
-		unsigned int dataOutLength;
+		unsigned dataOutLength;
 		
 		GOUROU_LOG(DEBUG, "Decrypt stream id " << object->objectId() << ", size " << stream->dataLength());
 

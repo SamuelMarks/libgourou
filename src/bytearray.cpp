@@ -30,13 +30,19 @@ namespace gourou
     ByteArray::ByteArray(bool useMalloc):_useMalloc(useMalloc), _data(0), _length(0)
     {}
 
-    ByteArray::ByteArray(unsigned int length, bool useMalloc):
+    ByteArray::ByteArray(unsigned length, bool useMalloc):
 	_useMalloc(useMalloc)
     {
 	initData(0, length);
     }
+
+    ByteArray::ByteArray(std::string::size_type length, bool useMalloc):
+            _useMalloc(useMalloc)
+    {
+        initData(0, length);
+    }
     
-    ByteArray::ByteArray(const unsigned char* data, unsigned int length):
+    ByteArray::ByteArray(const unsigned char* data, unsigned length):
 	_useMalloc(false)
     {
 	initData(data, length);
@@ -48,16 +54,16 @@ namespace gourou
 	if (length == -1)
 	    length = strlen(data);
 
-	initData((unsigned char*)data, (unsigned int) length);
+	initData((unsigned char*)data, (unsigned) length);
     }
     
     ByteArray::ByteArray(const std::string& str):
 	_useMalloc(false)
     {
-	initData((unsigned char*)str.c_str(), (unsigned int)str.length());
+	initData((unsigned char*)str.c_str(), (unsigned)str.length());
     }
 
-    void ByteArray::initData(const unsigned char* data, unsigned int length)
+    void ByteArray::initData(const unsigned char* data, unsigned length)
     {
 	if (_useMalloc)
 	    _data = (unsigned char*)malloc(length);
@@ -161,8 +167,8 @@ namespace gourou
 	if (str.size() % 2)
 	    throw std::invalid_argument("Size of hex string not multiple of 2");
 
-	ByteArray res((unsigned int)(str.size()/2));
-	unsigned int i;
+	ByteArray res(str.size()/2);
+    std::string::size_type i;
 
 	unsigned char* data = res.data();
 	unsigned char cur, tmp;
@@ -212,12 +218,12 @@ namespace gourou
 	return res;
     }
 
-    void ByteArray::append(const unsigned char* data, unsigned int length)
+    void ByteArray::append(const unsigned char* data, unsigned length)
     {
 	if (!length)
 	    return;
 	
-	unsigned int oldLength = _length;
+	unsigned oldLength = _length;
 
 	resize(_length+length, true);
 
